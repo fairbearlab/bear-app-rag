@@ -16,7 +16,10 @@ def _core_data_to_datetime(ts: float) -> datetime:
 class BearReader:
     """Read notes from a Bear SQLite database."""
 
-    def __init__(self, db_path: Path) -> None:
+    def __init__(self, db_path: Path | None = None) -> None:
+        if db_path is None:
+            from bear_rag import config
+            db_path = config.BEAR_DB_PATH
         db_path = Path(db_path)
         if not db_path.exists():
             raise FileNotFoundError(f"Bear database not found: {db_path}")

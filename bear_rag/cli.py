@@ -17,12 +17,16 @@ from bear_rag.sync import full_index, sync
 def _cmd_index(args, store, reader):
     print("Running full index...")
     result = full_index(store=store, reader=reader)
-    print(result)
+    print(f"Indexed {result.notes_updated} notes ({result.chunks_added} chunks).")
 
 
 def _cmd_sync(args, store, reader):
-    result = sync(store=store, reader=reader, dry_run=args.dry_run)
-    print(result)
+    dry_run = args.dry_run
+    if dry_run:
+        print("Dry run — no changes will be made.")
+    result = sync(store=store, reader=reader, dry_run=dry_run)
+    verb = "Would update" if dry_run else "Updated"
+    print(f"{verb} {result.notes_updated} notes ({result.chunks_added} chunks), deleted {result.notes_deleted}.")
 
 
 def _cmd_ask(args, store):
@@ -105,12 +109,13 @@ def main():
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     store = NoteStore()
-    reader = BearReader()
 
-    if args.command == "index":
-        _cmd_index(args, store, reader)
-    elif args.command == "sync":
-        _cmd_sync(args, store, reader)
+    if args.command in ("index", "sync"):
+        reader = BearReader()
+        if args.command == "index":
+            _cmd_index(args, store, reader)
+        else:
+            _cmd_sync(args, store, reader)
     elif args.command == "ask":
         _cmd_ask(args, store)
     elif args.command == "status":
