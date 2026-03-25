@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from bear_rag.store import NoteStore
+
 
 CORE_DATA_EPOCH = datetime(2001, 1, 1, tzinfo=timezone.utc)
 
@@ -91,3 +93,9 @@ def bear_db(tmp_path: Path) -> Path:
     conn.commit()
     conn.close()
     return db_path
+
+
+@pytest.fixture
+def note_store(tmp_path: Path) -> NoteStore:
+    """Create a NoteStore backed by a temporary ChromaDB directory."""
+    return NoteStore(persist_dir=tmp_path / "chroma")
