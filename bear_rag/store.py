@@ -19,14 +19,16 @@ class NoteStore:
     # ------------------------------------------------------------------
 
     def upsert_chunks(self, chunks: list[Chunk]) -> None:
-        """Upsert a list of chunks into the collection."""
+        """Upsert a list of chunks into the collection, batched in groups of ~100."""
         if not chunks:
             return
-        self._collection.upsert(
-            ids=[c.id for c in chunks],
-            documents=[c.text for c in chunks],
-            metadatas=[dict(c.metadata) for c in chunks],
-        )
+        for i in range(0, len(chunks), 100):
+            batch = chunks[i : i + 100]
+            self._collection.upsert(
+                ids=[c.id for c in batch],
+                documents=[c.text for c in batch],
+                metadatas=[dict(c.metadata) for c in batch],
+            )
 
     def delete_note(self, note_pk: int) -> None:
         """Delete all chunks belonging to the given note_pk."""
@@ -67,4 +69,10 @@ class NoteStore:
 
     def get_stats(self) -> dict:
         """Return a dict with basic collection statistics."""
-        return {"count": self._collection.count()}
+        count = self._collection.count()
+        note_count = 0
+        if count > 0:
+            result = self._collection.get(include=["metadatas"])
+            note_pks = {m["note_pk"] for m in result["metadatas"]}
+            note_count = len(note_pks)
+        return {"count": count, "note_count": note_count}

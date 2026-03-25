@@ -14,19 +14,31 @@ from bear_rag.store import NoteStore
 from bear_rag.sync import full_index, sync
 
 
+def _print_sync_result(result, verb="Updated"):
+    if result.notes_updated == 0 and result.notes_deleted == 0:
+        print("No notes found.")
+        return
+    print(f"{verb} {result.notes_updated} notes ({result.chunks_added} chunks), deleted {result.notes_deleted}.")
+
+
 def _cmd_index(args, store, reader):
     print("Running full index...")
     result = full_index(store=store, reader=reader)
-    print(f"Indexed {result.notes_updated} notes ({result.chunks_added} chunks).")
+    _print_sync_result(result, verb="Indexed")
 
 
 def _cmd_sync(args, store, reader):
     dry_run = args.dry_run
     if dry_run:
         print("Dry run — no changes will be made.")
-    result = sync(store=store, reader=reader, dry_run=dry_run)
+    try:
+        result = sync(store=store, reader=reader, dry_run=dry_run)
+    except Exception as exc:
+        print(f"Error during sync: {exc}", file=sys.stderr)
+        print("Try running 'bear-rag index' to rebuild the index.", file=sys.stderr)
+        sys.exit(1)
     verb = "Would update" if dry_run else "Updated"
-    print(f"{verb} {result.notes_updated} notes ({result.chunks_added} chunks), deleted {result.notes_deleted}.")
+    _print_sync_result(result, verb=verb)
 
 
 def _cmd_ask(args, store):
@@ -63,6 +75,7 @@ def _cmd_ask(args, store):
 
 def _cmd_status(args, store):
     stats = store.get_stats()
+    print(f"Notes indexed: {stats['note_count']}")
     print(f"Chunks indexed: {stats['count']}")
 
     if config.SYNC_STATE_PATH.exists():

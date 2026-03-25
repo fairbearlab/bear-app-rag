@@ -171,7 +171,7 @@ def test_status_prints_info(mock_store_cls, mock_reader_cls, monkeypatch, capsys
     monkeypatch.setattr("sys.argv", ["bear-rag", "status"])
 
     mock_store = MagicMock()
-    mock_store.get_stats.return_value = {"count": 42}
+    mock_store.get_stats.return_value = {"count": 42, "note_count": 7}
     mock_store_cls.return_value = mock_store
 
     main()

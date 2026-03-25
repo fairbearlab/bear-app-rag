@@ -72,7 +72,10 @@ def sync(
 
     notes_updated = len(changed_notes)
     notes_deleted = len(trashed_pks)
-    chunks_added = sum(len(chunk_note(note)) for note in changed_notes)
+
+    # Chunk all changed notes once (used for both dry-run counting and upserting).
+    chunks_by_note = [(note, chunk_note(note)) for note in changed_notes]
+    chunks_added = sum(len(chunks) for _, chunks in chunks_by_note)
 
     if dry_run:
         return SyncResult(
@@ -82,12 +85,9 @@ def sync(
         )
 
     # Apply changes to the store
-    total_chunks_added = 0
-    for note in changed_notes:
+    for note, chunks in chunks_by_note:
         store.delete_note(note.pk)
-        chunks = chunk_note(note)
         store.upsert_chunks(chunks)
-        total_chunks_added += len(chunks)
 
     for pk in trashed_pks:
         store.delete_note(pk)
@@ -105,7 +105,7 @@ def sync(
     return SyncResult(
         notes_updated=notes_updated,
         notes_deleted=notes_deleted,
-        chunks_added=total_chunks_added,
+        chunks_added=chunks_added,
     )
 
 

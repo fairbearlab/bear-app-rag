@@ -22,7 +22,7 @@ class BearReader:
             db_path = config.BEAR_DB_PATH
         db_path = Path(db_path)
         if not db_path.exists():
-            raise FileNotFoundError(f"Bear database not found: {db_path}")
+            raise FileNotFoundError(f"Bear database not found at {db_path}. Is Bear installed?")
         self._uri = f"file:{db_path}?mode=ro"
 
     def _connect(self) -> sqlite3.Connection:

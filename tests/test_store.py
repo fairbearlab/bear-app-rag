@@ -132,7 +132,7 @@ class TestNoteStoreReset:
 class TestNoteStoreStats:
     def test_stats_empty_store(self, note_store: NoteStore) -> None:
         stats = note_store.get_stats()
-        assert stats == {"count": 0}
+        assert stats == {"count": 0, "note_count": 0}
 
     def test_stats_after_adding_chunks(self, note_store: NoteStore) -> None:
         note_store.upsert_chunks([
@@ -140,4 +140,13 @@ class TestNoteStoreStats:
             _make_chunk(1, 1, "Second chunk"),
         ])
         stats = note_store.get_stats()
-        assert stats == {"count": 2}
+        assert stats == {"count": 2, "note_count": 1}
+
+    def test_stats_note_count_distinct(self, note_store: NoteStore) -> None:
+        note_store.upsert_chunks([
+            _make_chunk(1, 0, "Note one chunk one"),
+            _make_chunk(1, 1, "Note one chunk two"),
+            _make_chunk(2, 0, "Note two chunk one"),
+        ])
+        stats = note_store.get_stats()
+        assert stats == {"count": 3, "note_count": 2}
