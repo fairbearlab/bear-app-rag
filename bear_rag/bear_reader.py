@@ -13,11 +13,6 @@ def _core_data_to_datetime(ts: float) -> datetime:
     return datetime.fromtimestamp(CORE_DATA_EPOCH.timestamp() + ts, tz=timezone.utc)
 
 
-def _datetime_to_core_data(dt: datetime) -> float:
-    """Convert a datetime to a Core Data timestamp (seconds since 2001-01-01 UTC)."""
-    return (dt - CORE_DATA_EPOCH).total_seconds()
-
-
 class BearReader:
     """Read notes from a Bear SQLite database."""
 
@@ -25,88 +20,59 @@ class BearReader:
         db_path = Path(db_path)
         if not db_path.exists():
             raise FileNotFoundError(f"Bear database not found: {db_path}")
-        # Read-only URI connection
         self._uri = f"file:{db_path}?mode=ro"
 
     def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(self._uri, uri=True)
+
+    def _rows_to_notes(self, rows: list[tuple], cur: sqlite3.Cursor) -> list[BearNote]:
+        notes = []
+        for row in rows:
+            pk, title, text, mod_ts, is_trashed, is_archived = row
+            tags = self._fetch_tags(cur, pk)
+            notes.append(
+                BearNote(
+                    pk=pk,
+                    title=title or "",
+                    text=text or "",
+                    modified_at=_core_data_to_datetime(mod_ts),
+                    tags=tags,
+                    is_trashed=bool(is_trashed),
+                    is_archived=bool(is_archived),
+                )
+            )
+        return notes
 
     def read_notes(self, include_archived: bool = False) -> list[BearNote]:
         """Return all non-trashed notes, optionally including archived ones."""
         archive_filter = "" if include_archived else "AND n.ZARCHIVED = 0"
         query = f"""
             SELECT
-                n.Z_PK,
-                n.ZTITLE,
-                n.ZTEXT,
-                n.ZMODIFICATIONDATE,
-                n.ZTRASHED,
-                n.ZARCHIVED
+                n.Z_PK, n.ZTITLE, n.ZTEXT,
+                n.ZMODIFICATIONDATE, n.ZTRASHED, n.ZARCHIVED
             FROM ZSFNOTE n
-            WHERE n.ZTRASHED = 0
-              {archive_filter}
+            WHERE n.ZTRASHED = 0 {archive_filter}
             ORDER BY n.Z_PK
         """
         with self._connect() as conn:
             cur = conn.cursor()
             cur.execute(query)
-            rows = cur.fetchall()
-
-            notes = []
-            for row in rows:
-                pk, title, text, mod_ts, is_trashed, is_archived = row
-                tags = self._fetch_tags(cur, pk)
-                notes.append(
-                    BearNote(
-                        pk=pk,
-                        title=title or "",
-                        text=text or "",
-                        modified_at=_core_data_to_datetime(mod_ts),
-                        tags=tags,
-                        is_trashed=bool(is_trashed),
-                        is_archived=bool(is_archived),
-                    )
-                )
-        return notes
+            return self._rows_to_notes(cur.fetchall(), cur)
 
     def read_notes_modified_since(self, timestamp: float) -> list[BearNote]:
-        """Return non-trashed notes modified after the given Unix timestamp."""
-        # Convert Unix timestamp to Core Data timestamp
-        core_data_cutoff = timestamp - CORE_DATA_EPOCH.timestamp()
+        """Return non-trashed notes modified after the given Core Data timestamp."""
         query = """
             SELECT
-                n.Z_PK,
-                n.ZTITLE,
-                n.ZTEXT,
-                n.ZMODIFICATIONDATE,
-                n.ZTRASHED,
-                n.ZARCHIVED
+                n.Z_PK, n.ZTITLE, n.ZTEXT,
+                n.ZMODIFICATIONDATE, n.ZTRASHED, n.ZARCHIVED
             FROM ZSFNOTE n
-            WHERE n.ZTRASHED = 0
-              AND n.ZMODIFICATIONDATE > ?
+            WHERE n.ZTRASHED = 0 AND n.ZMODIFICATIONDATE > ?
             ORDER BY n.Z_PK
         """
         with self._connect() as conn:
             cur = conn.cursor()
-            cur.execute(query, (core_data_cutoff,))
-            rows = cur.fetchall()
-
-            notes = []
-            for row in rows:
-                pk, title, text, mod_ts, is_trashed, is_archived = row
-                tags = self._fetch_tags(cur, pk)
-                notes.append(
-                    BearNote(
-                        pk=pk,
-                        title=title or "",
-                        text=text or "",
-                        modified_at=_core_data_to_datetime(mod_ts),
-                        tags=tags,
-                        is_trashed=bool(is_trashed),
-                        is_archived=bool(is_archived),
-                    )
-                )
-        return notes
+            cur.execute(query, (timestamp,))
+            return self._rows_to_notes(cur.fetchall(), cur)
 
     def read_trashed_pks(self) -> list[int]:
         """Return primary keys of all trashed notes."""

@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from bear_rag.bear_reader import BearReader
+from tests.conftest import datetime_to_core_data
 
 
 class TestBearReaderReadNotes:
@@ -65,7 +66,7 @@ class TestBearReaderModifiedSince:
     def test_returns_only_recently_modified(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
         # Cutoff: June 10, 2024 — only the "recent" note (June 15) qualifies
-        cutoff = datetime(2024, 6, 10, 0, 0, 0, tzinfo=timezone.utc).timestamp()
+        cutoff = datetime_to_core_data(datetime(2024, 6, 10, tzinfo=timezone.utc))
         notes = reader.read_notes_modified_since(cutoff)
         pks = [n.pk for n in notes]
         assert pks == [2], f"Expected only pk=2 (recent note), got {pks}"
@@ -73,7 +74,7 @@ class TestBearReaderModifiedSince:
     def test_excludes_trashed_notes(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
         # Very old cutoff — would include everything if not filtered
-        cutoff = datetime(2000, 1, 1, tzinfo=timezone.utc).timestamp()
+        cutoff = datetime_to_core_data(datetime(2000, 1, 1, tzinfo=timezone.utc))
         notes = reader.read_notes_modified_since(cutoff)
         pks = [n.pk for n in notes]
         assert 3 not in pks, "Trashed note should be excluded from modified_since"
@@ -81,7 +82,7 @@ class TestBearReaderModifiedSince:
     def test_returns_empty_when_nothing_new(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
         # Future cutoff — nothing should match
-        cutoff = datetime(2030, 1, 1, tzinfo=timezone.utc).timestamp()
+        cutoff = datetime_to_core_data(datetime(2030, 1, 1, tzinfo=timezone.utc))
         notes = reader.read_notes_modified_since(cutoff)
         assert notes == []
 
