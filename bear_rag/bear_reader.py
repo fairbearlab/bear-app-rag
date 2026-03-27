@@ -101,6 +101,24 @@ class BearReader:
             cur.execute(query)
             return [(row[0], row[1]) for row in cur.fetchall()]
 
+    def read_note_by_title(self, title: str) -> BearNote | None:
+        """Return a non-trashed note matching the title (case-insensitive), or None."""
+        query = """
+            SELECT
+                n.Z_PK, n.ZTITLE, n.ZTEXT,
+                n.ZMODIFICATIONDATE, n.ZTRASHED, n.ZARCHIVED
+            FROM ZSFNOTE n
+            WHERE LOWER(n.ZTITLE) = LOWER(?) AND n.ZTRASHED = 0
+        """
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute(query, (title,))
+            rows = cur.fetchall()
+            if not rows:
+                return None
+            notes = self._rows_to_notes(rows, cur)
+            return notes[0]
+
     def _fetch_tags(self, cur: sqlite3.Cursor, note_pk: int) -> list[str]:
         """Fetch tag names for a given note PK."""
         cur.execute(

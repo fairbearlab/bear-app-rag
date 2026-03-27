@@ -127,6 +127,38 @@ class TestBearReaderListTags:
         assert tag_dict["work"] == 1
 
 
+class TestBearReaderReadNoteByTitle:
+    def test_finds_note_by_exact_title(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        note = reader.read_note_by_title("Normal Note")
+        assert note is not None
+        assert note.pk == 1
+        assert note.title == "Normal Note"
+        assert note.text == "This is a normal note."
+
+    def test_case_insensitive_match(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        note = reader.read_note_by_title("normal note")
+        assert note is not None
+        assert note.pk == 1
+
+    def test_returns_none_for_missing_title(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        note = reader.read_note_by_title("Nonexistent Note")
+        assert note is None
+
+    def test_excludes_trashed_notes(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        note = reader.read_note_by_title("Trashed Note")
+        assert note is None
+
+    def test_includes_tags(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        note = reader.read_note_by_title("Normal Note")
+        assert note is not None
+        assert sorted(note.tags) == ["personal", "work"]
+
+
 class TestBearReaderDbNotFound:
     def test_raises_file_not_found(self, tmp_path: Path) -> None:
         missing = tmp_path / "nonexistent.sqlite"
