@@ -129,6 +129,42 @@ class TestNoteStoreReset:
         assert note_store.get_stats()["count"] == 1
 
 
+def _make_tagged_chunk(note_pk: int, chunk_index: int, text: str, tags: str = "", title: str = "Test") -> Chunk:
+    return Chunk(
+        id=f"{note_pk}_{chunk_index}",
+        text=text,
+        metadata=ChunkMetadata(
+            note_pk=note_pk,
+            title=title,
+            tags=tags,
+            chunk_index=chunk_index,
+            heading_path="",
+            modified_at="2024-06-01T12:00:00+00:00",
+            source="bear",
+        ),
+    )
+
+
+class TestNoteStoreQueryWithFilter:
+    def test_query_filters_by_single_tag(self, note_store: NoteStore) -> None:
+        note_store.upsert_chunks([
+            _make_tagged_chunk(1, 0, "Python web framework tutorial", tags="python,web"),
+            _make_tagged_chunk(2, 0, "Rust systems programming guide", tags="rust,systems"),
+            _make_tagged_chunk(3, 0, "Python data science notebook", tags="python,data"),
+        ])
+        results = note_store.query("programming", n_results=10, where={"tags": {"$contains": "python"}})
+        result_pks = {c.metadata["note_pk"] for c in results}
+        assert result_pks == {1, 3}
+
+    def test_query_without_filter_returns_all(self, note_store: NoteStore) -> None:
+        note_store.upsert_chunks([
+            _make_tagged_chunk(1, 0, "Python web framework tutorial", tags="python,web"),
+            _make_tagged_chunk(2, 0, "Rust systems programming guide", tags="rust,systems"),
+        ])
+        results = note_store.query("programming", n_results=10)
+        assert len(results) == 2
+
+
 class TestNoteStoreStats:
     def test_stats_empty_store(self, note_store: NoteStore) -> None:
         stats = note_store.get_stats()
