@@ -156,6 +156,19 @@ class TestNoteStoreQueryWithFilter:
         result_pks = {c.metadata["note_pk"] for c in results}
         assert result_pks == {1, 3}
 
+    def test_query_filters_by_multiple_tags_or(self, note_store: NoteStore) -> None:
+        note_store.upsert_chunks([
+            _make_tagged_chunk(1, 0, "Python web framework tutorial", tags="python,web"),
+            _make_tagged_chunk(2, 0, "Rust systems programming guide", tags="rust,systems"),
+            _make_tagged_chunk(3, 0, "Go networking library", tags="go,networking"),
+        ])
+        results = note_store.query(
+            "programming", n_results=10,
+            where={"$or": [{"tags": {"$contains": "python"}}, {"tags": {"$contains": "rust"}}]},
+        )
+        result_pks = {c.metadata["note_pk"] for c in results}
+        assert result_pks == {1, 2}
+
     def test_query_without_filter_returns_all(self, note_store: NoteStore) -> None:
         note_store.upsert_chunks([
             _make_tagged_chunk(1, 0, "Python web framework tutorial", tags="python,web"),

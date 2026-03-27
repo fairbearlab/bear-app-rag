@@ -44,21 +44,62 @@ class NoteStore:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _extract_contains_filters(where: dict) -> tuple[dict | None, dict]:
+    def _extract_contains_filters(where: dict) -> tuple[dict | None, list[tuple[str, str, str]]]:
         """Split a where dict into (chromadb_where, contains_filters).
 
         ChromaDB's $contains operator does not work on metadata string fields.
         Any ``{"field": {"$contains": value}}`` clauses are extracted for
         post-filtering; the remainder is passed directly to ChromaDB.
+
+        Returns (chroma_where, contains_filters) where contains_filters is a
+        list of (field, value, mode) tuples. mode is "all" for top-level
+        conditions or "any" for conditions inside $or.
         """
-        contains_filters: dict = {}
+        contains_filters: list[tuple[str, str, str]] = []
         chroma_where: dict = {}
         for field, condition in where.items():
             if isinstance(condition, dict) and list(condition.keys()) == ["$contains"]:
-                contains_filters[field] = condition["$contains"]
+                contains_filters.append((field, condition["$contains"], "all"))
+            elif field == "$or" and isinstance(condition, list):
+                # Extract $contains clauses from $or groups for post-filtering.
+                or_contains = []
+                or_other = []
+                for clause in condition:
+                    if isinstance(clause, dict) and len(clause) == 1:
+                        f, c = next(iter(clause.items()))
+                        if isinstance(c, dict) and list(c.keys()) == ["$contains"]:
+                            or_contains.append((f, c["$contains"], "any"))
+                            continue
+                    or_other.append(clause)
+                if or_contains:
+                    contains_filters.extend(or_contains)
+                if or_other:
+                    chroma_where["$or"] = or_other
             else:
                 chroma_where[field] = condition
         return (chroma_where if chroma_where else None), contains_filters
+
+    @staticmethod
+    def _matches_contains_filters(metadata: dict, filters: list[tuple[str, str, str]]) -> bool:
+        """Check if metadata matches all extracted $contains filters.
+
+        Each filter is (field, value, mode). "all" filters must all match.
+        "any" filters (from $or) need at least one to match.
+        """
+        all_filters = [(f, v) for f, v, m in filters if m == "all"]
+        any_filters = [(f, v) for f, v, m in filters if m == "any"]
+
+        for field, value in all_filters:
+            if value not in str(metadata.get(field, "")):
+                return False
+
+        if any_filters and not any(
+            value in str(metadata.get(field, ""))
+            for field, value in any_filters
+        ):
+            return False
+
+        return True
 
     def query(self, text: str, n_results: int = 5, where: dict | None = None) -> list[Chunk]:
         """Return up to n_results chunks most relevant to text, optionally filtered by where clause."""
@@ -66,7 +107,7 @@ class NoteStore:
         if count == 0:
             return []
 
-        contains_filters: dict = {}
+        contains_filters: list[tuple[str, str, str]] = []
         chroma_where: dict | None = where
         if where:
             chroma_where, contains_filters = self._extract_contains_filters(where)
@@ -82,7 +123,7 @@ class NoteStore:
             raw["ids"][0], raw["documents"][0], raw["metadatas"][0]
         ):
             # Apply $contains post-filters on metadata string fields.
-            if any(value not in str(metadata.get(field, "")) for field, value in contains_filters.items()):
+            if not self._matches_contains_filters(metadata, contains_filters):
                 continue
             chunk_metadata = ChunkMetadata(
                 note_pk=int(metadata["note_pk"]),
