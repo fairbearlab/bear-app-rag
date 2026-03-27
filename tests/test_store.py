@@ -177,6 +177,34 @@ class TestNoteStoreQueryWithFilter:
         results = note_store.query("programming", n_results=10)
         assert len(results) == 2
 
+    def test_query_mixed_or_contains_and_equality(self, note_store: NoteStore) -> None:
+        """Mixed $or with $contains and non-$contains preserves OR semantics."""
+        note_store.upsert_chunks([
+            _make_tagged_chunk(1, 0, "Python web framework tutorial", tags="python,web", title="PyWeb"),
+            _make_tagged_chunk(2, 0, "Rust systems programming guide", tags="rust,systems", title="RustGuide"),
+            _make_tagged_chunk(3, 0, "Go networking library", tags="go,networking", title="GoNet"),
+        ])
+        # Should match note 1 (tags contains python) OR note 2 (title == RustGuide)
+        results = note_store.query(
+            "programming", n_results=10,
+            where={"$or": [{"tags": {"$contains": "python"}}, {"title": "RustGuide"}]},
+        )
+        result_pks = {c.metadata["note_pk"] for c in results}
+        assert result_pks == {1, 2}
+
+    def test_query_mixed_or_single_non_contains_no_crash(self, note_store: NoteStore) -> None:
+        """Mixed $or with one $contains and one non-$contains should not crash."""
+        note_store.upsert_chunks([
+            _make_tagged_chunk(1, 0, "Python notes", tags="python", title="PyNotes"),
+            _make_tagged_chunk(2, 0, "Other notes", tags="other", title="Other"),
+        ])
+        results = note_store.query(
+            "notes", n_results=10,
+            where={"$or": [{"tags": {"$contains": "python"}}, {"title": "Other"}]},
+        )
+        result_pks = {c.metadata["note_pk"] for c in results}
+        assert result_pks == {1, 2}
+
 
 class TestNoteStoreStats:
     def test_stats_empty_store(self, note_store: NoteStore) -> None:

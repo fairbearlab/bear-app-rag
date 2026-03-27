@@ -187,6 +187,22 @@ class TestBearReaderListNotes:
         # Notes with older timestamp: 4 (archived, Jan 1) and 5 (no tags, Jan 1)
         assert all(pk in [4, 5] for pk in pks)
 
+    def test_modified_since_respects_timezone_offset(self, bear_db: Path) -> None:
+        """A timestamp with an offset should be converted to UTC, not stamped as UTC."""
+        reader = BearReader(bear_db)
+        # Note 2 is modified at 2024-06-15T08:00:00Z.
+        # 2024-06-15T04:00:00-05:00 == 2024-06-15T09:00:00Z, which is AFTER note 2.
+        notes = reader.list_notes(modified_since="2024-06-15T04:00:00-05:00")
+        pks = [n.pk for n in notes]
+        assert 2 not in pks, "Offset should convert to 09:00 UTC, excluding note modified at 08:00 UTC"
+
+    def test_modified_before_respects_timezone_offset(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        # 2024-06-15T04:00:00-05:00 == 2024-06-15T09:00:00Z, which is AFTER note 2.
+        notes = reader.list_notes(modified_before="2024-06-15T04:00:00-05:00")
+        pks = [n.pk for n in notes]
+        assert 2 in pks, "Offset should convert to 09:00 UTC, including note modified at 08:00 UTC"
+
     def test_filter_by_title_contains(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
         notes = reader.list_notes(title_contains="recent")

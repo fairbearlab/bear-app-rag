@@ -146,12 +146,14 @@ class BearReader:
             params.append(tag)
 
         if modified_since is not None:
-            dt = datetime.fromisoformat(modified_since).replace(tzinfo=timezone.utc)
+            dt = datetime.fromisoformat(modified_since)
+            dt = dt.astimezone(timezone.utc) if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
             conditions.append("n.ZMODIFICATIONDATE > ?")
             params.append(_datetime_to_core_data(dt))
 
         if modified_before is not None:
-            dt = datetime.fromisoformat(modified_before).replace(tzinfo=timezone.utc)
+            dt = datetime.fromisoformat(modified_before)
+            dt = dt.astimezone(timezone.utc) if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
             conditions.append("n.ZMODIFICATIONDATE < ?")
             params.append(_datetime_to_core_data(dt))
 
