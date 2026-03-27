@@ -159,6 +159,64 @@ class TestBearReaderReadNoteByTitle:
         assert sorted(note.tags) == ["personal", "work"]
 
 
+class TestBearReaderListNotes:
+    def test_no_filters_returns_non_trashed(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        notes = reader.list_notes()
+        pks = [n.pk for n in notes]
+        assert 3 not in pks, "Trashed note should be excluded"
+        assert len(notes) == 4  # notes 1, 2, 4, 5
+
+    def test_filter_by_tag(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        notes = reader.list_notes(tag="work")
+        pks = [n.pk for n in notes]
+        assert pks == [1], f"Expected only note 1 with tag 'work', got {pks}"
+
+    def test_filter_by_modified_since(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        notes = reader.list_notes(modified_since="2024-06-10")
+        pks = [n.pk for n in notes]
+        assert 2 in pks, "Recent note should be included"
+        assert 5 not in pks, "Old note should be excluded"
+
+    def test_filter_by_modified_before(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        notes = reader.list_notes(modified_before="2024-02-01")
+        pks = [n.pk for n in notes]
+        # Notes with older timestamp: 4 (archived, Jan 1) and 5 (no tags, Jan 1)
+        assert all(pk in [4, 5] for pk in pks)
+
+    def test_filter_by_title_contains(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        notes = reader.list_notes(title_contains="recent")
+        pks = [n.pk for n in notes]
+        assert pks == [2]
+
+    def test_title_contains_case_insensitive(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        notes = reader.list_notes(title_contains="NORMAL")
+        pks = [n.pk for n in notes]
+        assert pks == [1]
+
+    def test_limit(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        notes = reader.list_notes(limit=2)
+        assert len(notes) <= 2
+
+    def test_combined_filters(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        notes = reader.list_notes(tag="personal", title_contains="normal")
+        pks = [n.pk for n in notes]
+        assert pks == [1]
+
+    def test_ordered_by_modified_descending(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        notes = reader.list_notes()
+        dates = [n.modified_at for n in notes]
+        assert dates == sorted(dates, reverse=True)
+
+
 class TestBearReaderDbNotFound:
     def test_raises_file_not_found(self, tmp_path: Path) -> None:
         missing = tmp_path / "nonexistent.sqlite"

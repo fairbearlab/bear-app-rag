@@ -13,6 +13,11 @@ def _core_data_to_datetime(ts: float) -> datetime:
     return datetime.fromtimestamp(CORE_DATA_EPOCH.timestamp() + ts, tz=timezone.utc)
 
 
+def _datetime_to_core_data(dt: datetime) -> float:
+    """Convert a datetime to a Core Data timestamp (seconds since 2001-01-01 UTC)."""
+    return (dt - CORE_DATA_EPOCH).total_seconds()
+
+
 class BearReader:
     """Read notes from a Bear SQLite database."""
 
@@ -118,6 +123,59 @@ class BearReader:
                 return None
             notes = self._rows_to_notes(rows, cur)
             return notes[0]
+
+    def list_notes(
+        self,
+        tag: str | None = None,
+        modified_since: str | None = None,
+        modified_before: str | None = None,
+        title_contains: str | None = None,
+        limit: int = 50,
+    ) -> list[BearNote]:
+        """Return non-trashed notes matching the given filters, ordered by modified date descending."""
+        conditions = ["n.ZTRASHED = 0"]
+        params: list = []
+        joins = ""
+
+        if tag is not None:
+            joins = """
+                JOIN Z_5TAGS jt ON jt.Z_5NOTES = n.Z_PK
+                JOIN ZSFNOTETAG t ON t.Z_PK = jt.Z_13TAGS
+            """
+            conditions.append("t.ZTITLE = ?")
+            params.append(tag)
+
+        if modified_since is not None:
+            dt = datetime.fromisoformat(modified_since).replace(tzinfo=timezone.utc)
+            conditions.append("n.ZMODIFICATIONDATE > ?")
+            params.append(_datetime_to_core_data(dt))
+
+        if modified_before is not None:
+            dt = datetime.fromisoformat(modified_before).replace(tzinfo=timezone.utc)
+            conditions.append("n.ZMODIFICATIONDATE < ?")
+            params.append(_datetime_to_core_data(dt))
+
+        if title_contains is not None:
+            conditions.append("LOWER(n.ZTITLE) LIKE ?")
+            params.append(f"%{title_contains.lower()}%")
+
+        where_clause = " AND ".join(conditions)
+        query = f"""
+            SELECT
+                n.Z_PK, n.ZTITLE, n.ZTEXT,
+                n.ZMODIFICATIONDATE, n.ZTRASHED, n.ZARCHIVED
+            FROM ZSFNOTE n
+            {joins}
+            WHERE {where_clause}
+            ORDER BY n.ZMODIFICATIONDATE DESC
+            LIMIT ?
+        """
+        params.append(limit)
+
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute(query, params)
+            return self._rows_to_notes(cur.fetchall(), cur)
 
     def _fetch_tags(self, cur: sqlite3.Cursor, note_pk: int) -> list[str]:
         """Fetch tag names for a given note PK."""
