@@ -29,6 +29,7 @@ def _cmd_index(args, store, reader):
 
 def _cmd_sync(args, store, reader):
     dry_run = args.dry_run
+    quiet = args.quiet
     if dry_run:
         print("Dry run — no changes will be made.")
     try:
@@ -37,6 +38,8 @@ def _cmd_sync(args, store, reader):
         print(f"Error during sync: {exc}", file=sys.stderr)
         print("Try running 'bear-rag index' to rebuild the index.", file=sys.stderr)
         sys.exit(1)
+    if quiet and result.notes_updated == 0 and result.notes_deleted == 0:
+        return
     verb = "Would update" if dry_run else "Updated"
     _print_sync_result(result, verb=verb)
 
@@ -103,6 +106,12 @@ def main():
         action="store_true",
         default=False,
         help="Show what would change without modifying the store.",
+    )
+    sync_parser.add_argument(
+        "--quiet",
+        action="store_true",
+        default=False,
+        help="Suppress output when there are no changes.",
     )
 
     # ask subcommand
