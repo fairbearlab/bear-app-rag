@@ -85,6 +85,22 @@ class BearReader:
             cur.execute(query)
             return [row[0] for row in cur.fetchall()]
 
+    def list_tags(self) -> list[tuple[str, int]]:
+        """Return (tag_name, note_count) tuples sorted by count descending. Only counts non-trashed notes."""
+        query = """
+            SELECT t.ZTITLE, COUNT(*) as cnt
+            FROM ZSFNOTETAG t
+            JOIN Z_5TAGS jt ON jt.Z_13TAGS = t.Z_PK
+            JOIN ZSFNOTE n ON n.Z_PK = jt.Z_5NOTES
+            WHERE n.ZTRASHED = 0
+            GROUP BY t.ZTITLE
+            ORDER BY cnt DESC
+        """
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute(query)
+            return [(row[0], row[1]) for row in cur.fetchall()]
+
     def _fetch_tags(self, cur: sqlite3.Cursor, note_pk: int) -> list[str]:
         """Fetch tag names for a given note PK."""
         cur.execute(

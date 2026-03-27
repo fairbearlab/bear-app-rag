@@ -100,6 +100,33 @@ class TestBearReaderTrashedPks:
             assert isinstance(pk, int), f"Expected int pk, got {type(pk)}"
 
 
+class TestBearReaderListTags:
+    def test_returns_tags_with_counts(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        tags = reader.list_tags()
+        tag_dict = dict(tags)
+        # From conftest: "work" on notes 1,3 but note 3 is trashed -> count 1
+        # "personal" on notes 1,4 but note 4 is archived (not trashed) -> count 2
+        # "recent" on note 2 -> count 1
+        assert tag_dict["personal"] == 2
+        assert tag_dict["work"] == 1
+        assert tag_dict["recent"] == 1
+
+    def test_sorted_by_count_descending(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        tags = reader.list_tags()
+        counts = [count for _, count in tags]
+        assert counts == sorted(counts, reverse=True)
+
+    def test_excludes_trashed_notes(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        tags = reader.list_tags()
+        tag_dict = dict(tags)
+        # "work" is on note 1 (not trashed) and note 3 (trashed)
+        # Should only count note 1
+        assert tag_dict["work"] == 1
+
+
 class TestBearReaderDbNotFound:
     def test_raises_file_not_found(self, tmp_path: Path) -> None:
         missing = tmp_path / "nonexistent.sqlite"
