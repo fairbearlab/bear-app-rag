@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 from bear_rag import config
 from bear_rag.bear_reader import BearReader
 from bear_rag.generator import generate_answer
-from bear_rag.retriever import Retriever
 from bear_rag.store import NoteStore
 from bear_rag.sync import full_index, sync
 
@@ -50,11 +49,9 @@ def _cmd_ask(args, store):
         print("Error: ANTHROPIC_API_KEY is not set.", file=sys.stderr)
         sys.exit(1)
 
-    retriever = Retriever(store)
-
     if args.question:
         # One-shot mode
-        chunks = retriever.retrieve(args.question)
+        chunks = store.query(text=args.question)
         answer = generate_answer(args.question, chunks)
         print(answer)
     else:
@@ -71,7 +68,7 @@ def _cmd_ask(args, store):
             if line.lower() in ("quit", "exit"):
                 break
 
-            chunks = retriever.retrieve(line)
+            chunks = store.query(text=line)
             answer = generate_answer(line, chunks)
             print(answer)
 

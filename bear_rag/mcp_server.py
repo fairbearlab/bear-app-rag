@@ -4,11 +4,29 @@ Local-only: runs over stdio, never exposes network transport.
 Read-only: Bear SQLite accessed via ?mode=ro URI.
 """
 
+import functools
+
 from mcp.server.fastmcp import FastMCP
 
+from bear_rag import config
 from bear_rag.bear_reader import BearReader
 from bear_rag.store import NoteStore
 from bear_rag.sync import sync as run_sync
+
+
+def _handle_errors(func):
+    """Decorator that catches known exceptions and returns structured error dicts."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except FileNotFoundError as exc:
+            return {"error": f"Bear database not found: {exc}"}
+        except ValueError as exc:
+            return {"error": f"Invalid input: {exc}"}
+
+    return wrapper
 
 server = FastMCP("bear-notes")
 
@@ -31,6 +49,7 @@ def _get_store() -> NoteStore:
 
 
 @server.tool()
+@_handle_errors
 def search_notes(query: str, tags: list[str] | None = None, limit: int = 10) -> list[dict]:
     """Semantic search over Bear notes. Finds content by meaning.
 
@@ -42,16 +61,16 @@ def search_notes(query: str, tags: list[str] | None = None, limit: int = 10) -> 
     where = None
     if tags:
         if len(tags) == 1:
-            where = {"tags": {"$contains": tags[0]}}
+            where = {"tags": {"$contains": "," + tags[0] + ","}}
         else:
-            where = {"$or": [{"tags": {"$contains": t}} for t in tags]}
+            where = {"$or": [{"tags": {"$contains": "," + t + ","}} for t in tags]}
 
     chunks = store.query(text=query, n_results=limit, where=where)
     return [
         {
             "title": c.metadata["title"],
             "text": c.text,
-            "tags": c.metadata["tags"],
+            "tags": [t for t in c.metadata["tags"].split(",") if t],
             "heading_path": c.metadata["heading_path"],
             "note_pk": c.metadata["note_pk"],
             "chunk_index": c.metadata["chunk_index"],
@@ -62,6 +81,7 @@ def search_notes(query: str, tags: list[str] | None = None, limit: int = 10) -> 
 
 
 @server.tool()
+@_handle_errors
 def read_note(title: str) -> dict:
     """Get the full text of a specific Bear note by title (case-insensitive).
 
@@ -81,6 +101,7 @@ def read_note(title: str) -> dict:
 
 
 @server.tool()
+@_handle_errors
 def list_notes(
     tag: str | None = None,
     modified_since: str | None = None,
@@ -115,6 +136,7 @@ def list_notes(
 
 
 @server.tool()
+@_handle_errors
 def list_tags() -> list[dict]:
     """List all Bear note tags with note counts.
 
@@ -127,6 +149,7 @@ def list_tags() -> list[dict]:
 
 
 @server.tool()
+@_handle_errors
 def sync_notes() -> dict:
     """Sync recent Bear note changes into the search index.
 
@@ -140,6 +163,34 @@ def sync_notes() -> dict:
         "notes_updated": result.notes_updated,
         "notes_deleted": result.notes_deleted,
         "chunks_indexed": result.chunks_added,
+    }
+
+
+@server.tool()
+@_handle_errors
+def status() -> dict:
+    """Show the current state of the search index.
+
+    Returns the number of indexed chunks, unique notes, and the last sync
+    timestamp. Use this to check whether the index is populated and fresh.
+    """
+    store = _get_store()
+    stats = store.get_stats()
+
+    last_sync = None
+    if config.SYNC_STATE_PATH.exists():
+        import json
+
+        try:
+            state = json.loads(config.SYNC_STATE_PATH.read_text())
+            last_sync = state.get("synced_at")
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    return {
+        "index_count": stats["count"],
+        "note_count": stats["note_count"],
+        "last_sync": last_sync,
     }
 
 

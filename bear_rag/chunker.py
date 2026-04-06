@@ -221,7 +221,7 @@ def chunk_note(note: BearNote) -> list[Chunk]:
     merged = _merge_up(expanded)
 
     # Build Chunk objects
-    tags_str = ",".join(note.tags)
+    tags_str = "," + ",".join(note.tags) + "," if note.tags else ""
     modified_at_str = note.modified_at.isoformat()
 
     chunks: list[Chunk] = []

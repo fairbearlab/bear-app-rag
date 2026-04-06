@@ -176,3 +176,51 @@ def test_sync_empty_db_returns_zero_result(empty_bear_db, tmp_path, sync_state_p
 
     assert result.notes_updated == 0
     assert result.chunks_added == 0
+
+
+def test_sync_writes_index_version(mock_reader, note_store_sync, sync_state_path):
+    """Sync state file should include the current index version."""
+    sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+
+    state = json.loads(sync_state_path.read_text())
+    from bear_rag import config
+    assert state["index_version"] == config.INDEX_VERSION
+
+
+# ---------------------------------------------------------------------------
+# check_index_version
+# ---------------------------------------------------------------------------
+
+def test_check_index_version_matches(tmp_path):
+    """Returns True when stored version matches current."""
+    from bear_rag.sync import check_index_version
+    from bear_rag import config
+
+    state_path = tmp_path / "state.json"
+    state_path.write_text(json.dumps({"timestamp": 0.0, "index_version": config.INDEX_VERSION}))
+    assert check_index_version(state_path) is True
+
+
+def test_check_index_version_mismatch(tmp_path):
+    """Returns False when stored version is outdated."""
+    from bear_rag.sync import check_index_version
+
+    state_path = tmp_path / "state.json"
+    state_path.write_text(json.dumps({"timestamp": 0.0, "index_version": 1}))
+    assert check_index_version(state_path) is False
+
+
+def test_check_index_version_no_file(tmp_path):
+    """Returns True when no state file exists (fresh install)."""
+    from bear_rag.sync import check_index_version
+
+    assert check_index_version(tmp_path / "nonexistent.json") is True
+
+
+def test_check_index_version_missing_field(tmp_path):
+    """Returns False when state file has no index_version field."""
+    from bear_rag.sync import check_index_version
+
+    state_path = tmp_path / "state.json"
+    state_path.write_text(json.dumps({"timestamp": 0.0}))
+    assert check_index_version(state_path) is False

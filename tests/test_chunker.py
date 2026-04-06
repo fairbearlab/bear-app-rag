@@ -372,8 +372,8 @@ class TestChunkNoteMetadata:
         assert len(chunks) >= 1
         tags_str = chunks[0].metadata["tags"]
         assert isinstance(tags_str, str), f"tags should be str, got {type(tags_str)}"
-        assert tags_str == "python,rag,notes", (
-            f"Expected 'python,rag,notes', got '{tags_str}'"
+        assert tags_str == ",python,rag,notes,", (
+            f"Expected ',python,rag,notes,', got '{tags_str}'"
         )
 
     def test_tags_empty_list(self) -> None:

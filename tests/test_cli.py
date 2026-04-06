@@ -106,23 +106,22 @@ def test_ask_requires_api_key(mock_store_cls, mock_reader_cls, monkeypatch):
 
 @patch("bear_rag.cli.BearReader")
 @patch("bear_rag.cli.NoteStore")
-@patch("bear_rag.cli.Retriever")
 @patch("bear_rag.cli.generate_answer")
 def test_ask_with_question(
-    mock_generate, mock_retriever_cls, mock_store_cls, mock_reader_cls, monkeypatch, capsys
+    mock_generate, mock_store_cls, mock_reader_cls, monkeypatch, capsys
 ):
-    """bear-rag ask 'question' should retrieve and generate once, printing the answer."""
+    """bear-rag ask 'question' should query the store and generate once, printing the answer."""
     monkeypatch.setattr("sys.argv", ["bear-rag", "ask", "What is Python?"])
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
 
-    mock_retriever = MagicMock()
-    mock_retriever.retrieve.return_value = [MagicMock()]
-    mock_retriever_cls.return_value = mock_retriever
+    mock_store = MagicMock()
+    mock_store.query.return_value = [MagicMock()]
+    mock_store_cls.return_value = mock_store
     mock_generate.return_value = "Python is a programming language."
 
     main()
 
-    mock_retriever.retrieve.assert_called_once_with("What is Python?")
+    mock_store.query.assert_called_once_with(text="What is Python?")
     mock_generate.assert_called_once()
     captured = capsys.readouterr()
     assert "Python is a programming language." in captured.out
@@ -134,13 +133,11 @@ def test_ask_with_question(
 
 @patch("bear_rag.cli.BearReader")
 @patch("bear_rag.cli.NoteStore")
-@patch("bear_rag.cli.Retriever")
 @patch("bear_rag.cli.generate_answer")
 @patch("builtins.input", side_effect=["What is Python?", "What is Rust?", "quit"])
 def test_ask_repl_mode(
     mock_input,
     mock_generate,
-    mock_retriever_cls,
     mock_store_cls,
     mock_reader_cls,
     monkeypatch,
@@ -149,26 +146,24 @@ def test_ask_repl_mode(
     monkeypatch.setattr("sys.argv", ["bear-rag", "ask"])
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
 
-    mock_retriever = MagicMock()
-    mock_retriever.retrieve.return_value = [MagicMock()]
-    mock_retriever_cls.return_value = mock_retriever
+    mock_store = MagicMock()
+    mock_store.query.return_value = [MagicMock()]
+    mock_store_cls.return_value = mock_store
     mock_generate.return_value = "An answer."
 
     main()
 
-    assert mock_retriever.retrieve.call_count == 2
+    assert mock_store.query.call_count == 2
     assert mock_generate.call_count == 2
 
 
 @patch("bear_rag.cli.BearReader")
 @patch("bear_rag.cli.NoteStore")
-@patch("bear_rag.cli.Retriever")
 @patch("bear_rag.cli.generate_answer")
 @patch("builtins.input", side_effect=EOFError)
 def test_ask_repl_exits_on_eof(
     mock_input,
     mock_generate,
-    mock_retriever_cls,
     mock_store_cls,
     mock_reader_cls,
     monkeypatch,
@@ -177,14 +172,14 @@ def test_ask_repl_exits_on_eof(
     monkeypatch.setattr("sys.argv", ["bear-rag", "ask"])
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
 
-    mock_retriever = MagicMock()
-    mock_retriever_cls.return_value = mock_retriever
+    mock_store = MagicMock()
+    mock_store_cls.return_value = mock_store
     mock_generate.return_value = "An answer."
 
     # Should not raise
     main()
 
-    mock_retriever.retrieve.assert_not_called()
+    mock_store.query.assert_not_called()
     mock_generate.assert_not_called()
 
 
