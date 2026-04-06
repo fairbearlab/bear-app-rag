@@ -186,21 +186,28 @@ class BearReader:
 
     @staticmethod
     def _fetch_tags_batch(cur: sqlite3.Cursor, pks: list[int]) -> dict[int, list[str]]:
-        """Fetch tag names for multiple note PKs in a single query."""
+        """Fetch tag names for multiple note PKs in a single query.
+
+        Splits *pks* into chunks to stay under SQLite's host-parameter
+        limit (commonly 999).
+        """
         if not pks:
             return {}
-        placeholders = ",".join("?" for _ in pks)
-        cur.execute(
-            f"""
-            SELECT jt.Z_5NOTES, t.ZTITLE
-            FROM ZSFNOTETAG t
-            JOIN Z_5TAGS jt ON jt.Z_13TAGS = t.Z_PK
-            WHERE jt.Z_5NOTES IN ({placeholders})
-            ORDER BY jt.Z_5NOTES, t.ZTITLE
-            """,
-            pks,
-        )
         tags_by_pk: dict[int, list[str]] = {}
-        for note_pk, tag_title in cur.fetchall():
-            tags_by_pk.setdefault(note_pk, []).append(tag_title)
+        chunk_size = 900  # well under SQLite's default 999 variable limit
+        for start in range(0, len(pks), chunk_size):
+            chunk = pks[start : start + chunk_size]
+            placeholders = ",".join("?" for _ in chunk)
+            cur.execute(
+                f"""
+                SELECT jt.Z_5NOTES, t.ZTITLE
+                FROM ZSFNOTETAG t
+                JOIN Z_5TAGS jt ON jt.Z_13TAGS = t.Z_PK
+                WHERE jt.Z_5NOTES IN ({placeholders})
+                ORDER BY jt.Z_5NOTES, t.ZTITLE
+                """,
+                chunk,
+            )
+            for note_pk, tag_title in cur.fetchall():
+                tags_by_pk.setdefault(note_pk, []).append(tag_title)
         return tags_by_pk

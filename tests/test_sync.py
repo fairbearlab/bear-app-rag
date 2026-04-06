@@ -191,6 +191,30 @@ def test_sync_writes_index_version(mock_reader, note_store_sync, sync_state_path
 # check_index_version
 # ---------------------------------------------------------------------------
 
+def test_sync_triggers_full_reindex_on_version_mismatch(
+    mock_reader, note_store_sync, sync_state_path
+):
+    """sync() should force a full reindex when the stored index version doesn't match."""
+    # First sync to populate the store and state file.
+    result = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+    initial_count = result.notes_updated
+    assert initial_count > 0
+
+    # Tamper with the stored version to simulate an upgrade.
+    state = json.loads(sync_state_path.read_text())
+    state["index_version"] = -999
+    sync_state_path.write_text(json.dumps(state))
+
+    # Next sync should detect the mismatch and do a full reindex.
+    result2 = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+    assert result2.notes_updated == initial_count  # all notes re-indexed
+
+    # State file should now have the correct version.
+    from bear_rag import config
+    state2 = json.loads(sync_state_path.read_text())
+    assert state2["index_version"] == config.INDEX_VERSION
+
+
 def test_check_index_version_matches(tmp_path):
     """Returns True when stored version matches current."""
     from bear_rag.sync import check_index_version

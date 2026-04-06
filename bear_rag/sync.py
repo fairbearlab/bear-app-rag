@@ -76,6 +76,9 @@ def sync(
     if reader is None:
         reader = BearReader(db_path=config.BEAR_DB_PATH)
 
+    if not check_index_version(state_path):
+        return full_index(store=store, reader=reader, state_path=state_path)
+
     last_timestamp = _read_timestamp(state_path)
 
     changed_notes = [
