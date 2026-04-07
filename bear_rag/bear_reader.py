@@ -34,17 +34,18 @@ class BearReader:
         return sqlite3.connect(self._uri, uri=True)
 
     def _rows_to_notes(self, rows: list[tuple], cur: sqlite3.Cursor) -> list[BearNote]:
+        pks = [row[0] for row in rows]
+        tags_by_pk = self._fetch_tags_batch(cur, pks)
         notes = []
         for row in rows:
             pk, title, text, mod_ts, is_trashed, is_archived = row
-            tags = self._fetch_tags(cur, pk)
             notes.append(
                 BearNote(
                     pk=pk,
                     title=title or "",
                     text=text or "",
                     modified_at=_core_data_to_datetime(mod_ts),
-                    tags=tags,
+                    tags=tags_by_pk.get(pk, []),
                     is_trashed=bool(is_trashed),
                     is_archived=bool(is_archived),
                 )
@@ -82,12 +83,16 @@ class BearReader:
             cur.execute(query, (timestamp,))
             return self._rows_to_notes(cur.fetchall(), cur)
 
-    def read_trashed_pks(self) -> list[int]:
-        """Return primary keys of all trashed notes."""
-        query = "SELECT Z_PK FROM ZSFNOTE WHERE ZTRASHED = 1 ORDER BY Z_PK"
+    def read_trashed_pks(self, since_timestamp: float = 0.0) -> list[int]:
+        """Return primary keys of trashed notes modified after the given Core Data timestamp."""
+        query = """
+            SELECT Z_PK FROM ZSFNOTE
+            WHERE ZTRASHED = 1 AND ZMODIFICATIONDATE > ?
+            ORDER BY Z_PK
+        """
         with self._connect() as conn:
             cur = conn.cursor()
-            cur.execute(query)
+            cur.execute(query, (since_timestamp,))
             return [row[0] for row in cur.fetchall()]
 
     def list_tags(self) -> list[tuple[str, int]]:
@@ -179,16 +184,30 @@ class BearReader:
             cur.execute(query, params)
             return self._rows_to_notes(cur.fetchall(), cur)
 
-    def _fetch_tags(self, cur: sqlite3.Cursor, note_pk: int) -> list[str]:
-        """Fetch tag names for a given note PK."""
-        cur.execute(
-            """
-            SELECT t.ZTITLE
-            FROM ZSFNOTETAG t
-            JOIN Z_5TAGS jt ON jt.Z_13TAGS = t.Z_PK
-            WHERE jt.Z_5NOTES = ?
-            ORDER BY t.ZTITLE
-            """,
-            (note_pk,),
-        )
-        return [row[0] for row in cur.fetchall()]
+    @staticmethod
+    def _fetch_tags_batch(cur: sqlite3.Cursor, pks: list[int]) -> dict[int, list[str]]:
+        """Fetch tag names for multiple note PKs in a single query.
+
+        Splits *pks* into chunks to stay under SQLite's host-parameter
+        limit (commonly 999).
+        """
+        if not pks:
+            return {}
+        tags_by_pk: dict[int, list[str]] = {}
+        chunk_size = 900  # well under SQLite's default 999 variable limit
+        for start in range(0, len(pks), chunk_size):
+            chunk = pks[start : start + chunk_size]
+            placeholders = ",".join("?" for _ in chunk)
+            cur.execute(
+                f"""
+                SELECT jt.Z_5NOTES, t.ZTITLE
+                FROM ZSFNOTETAG t
+                JOIN Z_5TAGS jt ON jt.Z_13TAGS = t.Z_PK
+                WHERE jt.Z_5NOTES IN ({placeholders})
+                ORDER BY jt.Z_5NOTES, t.ZTITLE
+                """,
+                chunk,
+            )
+            for note_pk, tag_title in cur.fetchall():
+                tags_by_pk.setdefault(note_pk, []).append(tag_title)
+        return tags_by_pk

@@ -88,7 +88,7 @@ class TestBearReaderModifiedSince:
 
 
 class TestBearReaderTrashedPks:
-    def test_returns_trashed_pks(self, bear_db: Path) -> None:
+    def test_returns_trashed_pks_default(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
         pks = reader.read_trashed_pks()
         assert pks == [3]
@@ -98,6 +98,19 @@ class TestBearReaderTrashedPks:
         pks = reader.read_trashed_pks()
         for pk in pks:
             assert isinstance(pk, int), f"Expected int pk, got {type(pk)}"
+
+    def test_timestamp_filter_returns_recently_trashed(self, bear_db: Path) -> None:
+        """With a very old timestamp, returns all trashed notes."""
+        reader = BearReader(bear_db)
+        pks = reader.read_trashed_pks(since_timestamp=0.0)
+        assert pks == [3]
+
+    def test_timestamp_filter_excludes_old_trash(self, bear_db: Path) -> None:
+        """With a future timestamp, returns no trashed notes."""
+        reader = BearReader(bear_db)
+        future = datetime_to_core_data(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        pks = reader.read_trashed_pks(since_timestamp=future)
+        assert pks == []
 
 
 class TestBearReaderListTags:

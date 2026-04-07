@@ -23,13 +23,28 @@ def _read_timestamp(state_path: Path) -> float:
 
 
 def _write_state(state_path: Path, timestamp: float) -> None:
-    """Write sync state (timestamp + human-readable synced_at) to *state_path*."""
+    """Write sync state (timestamp + human-readable synced_at + index version) to *state_path*."""
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state = {
         "timestamp": timestamp,
         "synced_at": datetime.now(tz=timezone.utc).isoformat(),
+        "index_version": config.INDEX_VERSION,
     }
     state_path.write_text(json.dumps(state))
+
+
+def check_index_version(state_path: Path = config.SYNC_STATE_PATH) -> bool:
+    """Return True if the stored index version matches the current version.
+
+    Returns True (compatible) when no state file exists (fresh install).
+    """
+    if not state_path.exists():
+        return True
+    try:
+        state = json.loads(state_path.read_text())
+        return state.get("index_version") == config.INDEX_VERSION
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return False
 
 
 def sync(
@@ -61,6 +76,9 @@ def sync(
     if reader is None:
         reader = BearReader(db_path=config.BEAR_DB_PATH)
 
+    if not check_index_version(state_path):
+        return full_index(store=store, reader=reader, state_path=state_path)
+
     last_timestamp = _read_timestamp(state_path)
 
     changed_notes = [
@@ -68,7 +86,7 @@ def sync(
         for note in reader.read_notes_modified_since(last_timestamp)
         if not note.is_archived
     ]
-    trashed_pks = reader.read_trashed_pks()
+    trashed_pks = reader.read_trashed_pks(since_timestamp=last_timestamp)
 
     notes_updated = len(changed_notes)
     notes_deleted = len(trashed_pks)
