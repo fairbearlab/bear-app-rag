@@ -1,0 +1,192 @@
+---
+layout: null
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bear-app-rag Benchmark Results</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    color: #1f2937;
+    background: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e5e7eb; background: #111827; }
+    a { color: #60a5fa; }
+    .summary { background: #1f2937; border-color: #374151; }
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  p { line-height: 1.6; margin-bottom: 1rem; color: #4b5563; }
+  @media (prefers-color-scheme: dark) { p { color: #9ca3af; } }
+  .chart { margin: 2rem 0; }
+  svg { max-width: 100%; height: auto; }
+  .summary {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .summary p { margin-bottom: 0.5rem; }
+  a { color: #3b82f6; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<h1>bear-app-rag Benchmark Results</h1>
+<p>
+  RAG vs keyword (SQLite LIKE) retrieval on a 25-note synthetic corpus
+  with 20 eval queries across four query types.
+</p>
+
+<div class="summary">
+  <p><strong>Key finding:</strong> Semantic search beats keyword matching by
+  +40% recall on paraphrase queries and +13% on synonym queries.
+  On exact-match queries (control), both tie at 1.00.</p>
+</div>
+
+<div class="chart">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 404" width="600" height="404" role="img" aria-label="Recall@5 by Query Type">
+<title>Recall@5 by Query Type</title>
+<style>
+  text { font-family: system-ui, -apple-system, sans-serif; font-size: 13px; }
+  .title { font-size: 16px; font-weight: 600; }
+  .label { font-size: 13px; fill: #374151; }
+  .value { font-size: 12px; fill: #374151; font-weight: 500; }
+  .bar-rag { fill: #3b82f6; }
+  .bar-like { fill: #94a3b8; }
+  @media (prefers-color-scheme: dark) {
+    .label, .value, .title { fill: #e5e7eb; }
+    .bar-rag { fill: #60a5fa; }
+    .bar-like { fill: #64748b; }
+  }
+</style>
+<text x="300" y="20" text-anchor="middle" class="title">Recall@5 by Query Type</text>
+<text x="132" y="78" text-anchor="end" class="label">Exact Match</text>
+<rect x="140" y="44" width="400.0" height="28" rx="3" class="bar-rag"/>
+<text x="546.0" y="64" class="value">1.00</text>
+<rect x="140" y="84" width="400.0" height="28" rx="3" class="bar-like"/>
+<text x="546.0" y="104" class="value">1.00</text>
+<text x="132" y="170" text-anchor="end" class="label">Multi Concept</text>
+<rect x="140" y="136" width="333.3" height="28" rx="3" class="bar-rag"/>
+<text x="479.32" y="156" class="value">0.83</text>
+<rect x="140" y="176" width="293.3" height="28" rx="3" class="bar-like"/>
+<text x="439.32" y="196" class="value">0.73</text>
+<text x="132" y="262" text-anchor="end" class="label">Paraphrase</text>
+<rect x="140" y="228" width="400.0" height="28" rx="3" class="bar-rag"/>
+<text x="546.0" y="248" class="value">1.00</text>
+<rect x="140" y="268" width="240.0" height="28" rx="3" class="bar-like"/>
+<text x="386.0" y="288" class="value">0.60</text>
+<text x="132" y="354" text-anchor="end" class="label">Synonym</text>
+<rect x="140" y="320" width="333.3" height="28" rx="3" class="bar-rag"/>
+<text x="479.32" y="340" class="value">0.83</text>
+<rect x="140" y="360" width="280.0" height="28" rx="3" class="bar-like"/>
+<text x="426.0" y="380" class="value">0.70</text>
+<rect x="140" y="380" width="14" height="14" rx="2" class="bar-rag"/>
+<text x="160" y="391" class="label">RAG</text>
+<rect x="210" y="380" width="14" height="14" rx="2" class="bar-like"/>
+<text x="230" y="391" class="label">Keyword (LIKE)</text>
+</svg>
+</div>
+
+<div class="chart">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 404" width="600" height="404" role="img" aria-label="MRR by Query Type">
+<title>MRR by Query Type</title>
+<style>
+  text { font-family: system-ui, -apple-system, sans-serif; font-size: 13px; }
+  .title { font-size: 16px; font-weight: 600; }
+  .label { font-size: 13px; fill: #374151; }
+  .value { font-size: 12px; fill: #374151; font-weight: 500; }
+  .bar-rag { fill: #3b82f6; }
+  .bar-like { fill: #94a3b8; }
+  @media (prefers-color-scheme: dark) {
+    .label, .value, .title { fill: #e5e7eb; }
+    .bar-rag { fill: #60a5fa; }
+    .bar-like { fill: #64748b; }
+  }
+</style>
+<text x="300" y="20" text-anchor="middle" class="title">MRR by Query Type</text>
+<text x="132" y="78" text-anchor="end" class="label">Exact Match</text>
+<rect x="140" y="44" width="400.0" height="28" rx="3" class="bar-rag"/>
+<text x="546.0" y="64" class="value">1.00</text>
+<rect x="140" y="84" width="400.0" height="28" rx="3" class="bar-like"/>
+<text x="546.0" y="104" class="value">1.00</text>
+<text x="132" y="170" text-anchor="end" class="label">Multi Concept</text>
+<rect x="140" y="136" width="336.0" height="28" rx="3" class="bar-rag"/>
+<text x="482.0" y="156" class="value">0.84</text>
+<rect x="140" y="176" width="360.0" height="28" rx="3" class="bar-like"/>
+<text x="506.0" y="196" class="value">0.90</text>
+<text x="132" y="262" text-anchor="end" class="label">Paraphrase</text>
+<rect x="140" y="228" width="306.7" height="28" rx="3" class="bar-rag"/>
+<text x="452.68" y="248" class="value">0.77</text>
+<rect x="140" y="268" width="176.0" height="28" rx="3" class="bar-like"/>
+<text x="322.0" y="288" class="value">0.44</text>
+<text x="132" y="354" text-anchor="end" class="label">Synonym</text>
+<rect x="140" y="320" width="400.0" height="28" rx="3" class="bar-rag"/>
+<text x="546.0" y="340" class="value">1.00</text>
+<rect x="140" y="360" width="280.0" height="28" rx="3" class="bar-like"/>
+<text x="426.0" y="380" class="value">0.70</text>
+<rect x="140" y="380" width="14" height="14" rx="2" class="bar-rag"/>
+<text x="160" y="391" class="label">RAG</text>
+<rect x="210" y="380" width="14" height="14" rx="2" class="bar-like"/>
+<text x="230" y="391" class="label">Keyword (LIKE)</text>
+</svg>
+</div>
+
+<div class="chart">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 312" width="600" height="312" role="img" aria-label="Overall Metrics">
+<title>Overall Metrics</title>
+<style>
+  text { font-family: system-ui, -apple-system, sans-serif; font-size: 13px; }
+  .title { font-size: 16px; font-weight: 600; }
+  .label { font-size: 13px; fill: #374151; }
+  .value { font-size: 12px; fill: #374151; font-weight: 500; }
+  .bar-rag { fill: #3b82f6; }
+  .bar-like { fill: #94a3b8; }
+  @media (prefers-color-scheme: dark) {
+    .label, .value, .title { fill: #e5e7eb; }
+    .bar-rag { fill: #60a5fa; }
+    .bar-like { fill: #64748b; }
+  }
+</style>
+<text x="300" y="20" text-anchor="middle" class="title">Overall Metrics</text>
+<text x="132" y="78" text-anchor="end" class="label">Recall@5</text>
+<rect x="140" y="44" width="366.7" height="28" rx="3" class="bar-rag"/>
+<text x="512.6800000000001" y="64" class="value">0.92</text>
+<rect x="140" y="84" width="303.3" height="28" rx="3" class="bar-like"/>
+<text x="449.32" y="104" class="value">0.76</text>
+<text x="132" y="170" text-anchor="end" class="label">MRR</text>
+<rect x="140" y="136" width="360.7" height="28" rx="3" class="bar-rag"/>
+<text x="506.67999999999995" y="156" class="value">0.90</text>
+<rect x="140" y="176" width="304.0" height="28" rx="3" class="bar-like"/>
+<text x="450.0" y="196" class="value">0.76</text>
+<text x="132" y="262" text-anchor="end" class="label">Groundedness</text>
+<rect x="140" y="228" width="344.8" height="28" rx="3" class="bar-rag"/>
+<text x="490.76" y="248" class="value">0.86</text>
+<rect x="140" y="268" width="321.4" height="28" rx="3" class="bar-like"/>
+<text x="467.44" y="288" class="value">0.80</text>
+<rect x="140" y="288" width="14" height="14" rx="2" class="bar-rag"/>
+<text x="160" y="299" class="label">RAG</text>
+<rect x="210" y="288" width="14" height="14" rx="2" class="bar-like"/>
+<text x="230" y="299" class="label">Keyword (LIKE)</text>
+</svg>
+</div>
+
+<p>
+  Data source: <code>tests/eval/results.json</code>.
+  Reproduce with <code>uv run pytest -m eval -v</code>.
+</p>
+<p>
+  <a href="../BUILDING.html">Read the full story</a> |
+  <a href="../ARCHITECTURE.html">Architecture tour</a> |
+  <a href="https://github.com/fairbearlab/bear-app-rag">Source code</a>
+</p>
+</body>
+</html>
