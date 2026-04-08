@@ -214,8 +214,9 @@ class TestEvalRetrieval:
 
 @pytest.mark.eval
 @pytest.mark.skipif(
-    not os.environ.get("EVAL_LLM_JUDGE"),
-    reason="Set EVAL_LLM_JUDGE=1 to enable LLM judge",
+    not os.environ.get("EVAL_LLM_JUDGE")
+    or not os.environ.get("ANTHROPIC_API_KEY"),
+    reason="Set EVAL_LLM_JUDGE=1 and ANTHROPIC_API_KEY to enable LLM judge",
 )
 class TestLLMJudge:
     def test_llm_judge_runs(self, corpus, queries):
