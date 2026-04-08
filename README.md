@@ -1,118 +1,187 @@
-# bear-rag
+# bear-app-rag
 
-Local RAG pipeline over [Bear](https://bear.app) notes. Indexes your notes into ChromaDB with local ONNX embeddings, then answers questions via Claude.
+Local-first semantic search for [Bear](https://bear.app) notes. Indexes your notes with local ONNX embeddings, proves it works with a hand-rolled eval, and serves results to AI agents via MCP.
 
-## Setup
+4 direct dependencies. Zero frameworks. [Provable benchmarks](#benchmark-results).
 
-```Shell
+<!-- TODO: Add terminal recording GIF here after Step 6b -->
+
+## Why This Exists
+
+Bear has no API. Your notes are locked in a SQLite database. Existing Bear integrations pass entire notes to AI, which breaks past ~50 notes. bear-app-rag chunks your notes, embeds them locally, and retrieves the most relevant chunks via semantic search.
+
+**The key claim:** RAG retrieval beats keyword matching by 40% on paraphrase queries. [See the benchmark results.](#benchmark-results)
+
+## Quickstart (5 minutes)
+
+**Prerequisites:** macOS, Python 3.11+, [Bear](https://bear.app) installed with some notes.
+
+```shell
+pip install git+https://github.com/fairbearlab/bear-app-rag.git
+bear-rag index
+bear-rag ask "What did I write about..."
+```
+
+First index takes ~30s extra to download the embedding model (~90MB, one-time). Subsequent runs are instant.
+
+**For development:**
+
+```shell
+git clone https://github.com/fairbearlab/bear-app-rag.git
+cd bear-app-rag
 uv sync
-cp .env.example .env   # then add your ANTHROPIC_API_KEY
+uv run bear-rag index
 ```
 
-Create a `.env` file with your Anthropic API key (only needed for the `ask` command):
+### MCP Server (Claude Code)
 
-```Shell
-ANTHROPIC_API_KEY=sk-ant-...
+Add to `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "bear-notes": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/bear-app-rag", "run", "bear-rag-mcp"]
+    }
+  }
+}
 ```
 
-## Usage
-
-```Shell
-bear-rag index              # full rebuild — wipe and re-index all notes
-bear-rag sync               # incremental update since last sync
-bear-rag sync --dry-run     # preview what would change
-bear-rag ask "question"     # one-shot query
-bear-rag ask                # interactive REPL mode
-bear-rag status             # show index stats and last sync time
-```
+Claude Code can then search your notes during conversation.
 
 ### Auto-sync with cron
 
-```Shell
-*/15 * * * * cd /path/to/bear-rag && uv run bear-rag sync >> ~/.bear-rag/sync.log 2>&1
+```shell
+*/15 * * * * cd /path/to/bear-app-rag && uv run bear-rag sync --quiet >> ~/.bear-rag/sync.log 2>&1
 ```
 
-## Architecture
+## How It Works
 
 ```text
-Bear SQLite (read-only) → Chunker → ChromaDB (ONNX embeddings) → Claude API
+Bear SQLite DB ──→ BearReader ──→ Chunker ──→ NoteStore (ChromaDB) ──→ MCP Server / CLI
+   (read-only)     (Core Data      (markdown-     (ONNX embeddings,      (search, read,
+                    timestamps)      aware split)   local vector store)    list, sync)
 ```
 
-| Module           | Purpose                                                  |
-| ---------------- | -------------------------------------------------------- |
-| `bear_reader.py` | Reads notes and tags from Bear's SQLite database         |
-| `chunker.py`     | Markdown-aware splitting at headings with overlap        |
-| `store.py`       | ChromaDB collection management (embed via built-in ONNX) |
-| `generator.py`   | Prompt construction and Claude API calls                 |
-| `sync.py`        | Incremental sync with timestamp-based change detection   |
-| `cli.py`         | argparse entry point with subcommands                    |
-| `mcp_server.py`  | MCP server exposing search, read, list, sync, status     |
+Your notes never leave the machine. Embeddings are computed locally via ONNX Runtime. The only network call is the one-time model download.
 
-Embeddings use ChromaDB's default `all-MiniLM-L6-v2` model via ONNX — no data leaves your machine unless you explicitly run `ask`.
+[Read the full architecture tour.](docs/ARCHITECTURE.md)
 
-## Configuration
-
-All constants live in `bear_rag/config.py`:
-
-| Constant            | Default                                          | Description                                  |
-| ------------------- | ------------------------------------------------ | -------------------------------------------- |
-| `BEAR_DB_PATH`      | `~/Library/Group Containers/.../database.sqlite` | Bear SQLite database path                    |
-| `DATA_DIR`          | `~/.bear-rag`                                    | Persistent state directory                   |
-| `CHROMA_DIR`        | `~/.bear-rag/chroma`                             | ChromaDB storage                             |
-| `MAX_CHUNK_WORDS`   | 300                                              | Target max words per chunk (\~390 tokens)    |
-| `MIN_CHUNK_WORDS`   | 30                                               | Below this, merge into adjacent chunk        |
-| `OVERLAP_WORDS`     | 40                                               | Word overlap when splitting oversized chunks |
-| `CLAUDE_MODEL`      | `claude-sonnet-4-20250514`                       | Model for answer generation                  |
-| `CLAUDE_MAX_TOKENS` | 4096                                             | Max response tokens                          |
-
-## Benchmarks
+## Benchmark Results
 
 RAG vs keyword (SQLite LIKE) retrieval on a 25-note synthetic corpus with 20 eval queries across four query types. Results from `tests/eval/results.json`.
 
 ### Aggregate Metrics
 
-| Metric       | RAG  | Keyword (LIKE) |
-| ------------ | ---- | -------------- |
-| Recall@5     | 0.92 | 0.76           |
-| MRR          | 0.90 | 0.76           |
-| Groundedness | 0.86 | 0.80           |
+| Metric | RAG | Keyword (LIKE) |
+|--------|-----|----------------|
+| Recall@5 | 0.92 | 0.76 |
+| MRR | 0.90 | 0.76 |
+| Groundedness | 0.86 | 0.80 |
 
 ### By Query Type
 
-| Query Type      | Count | Recall RAG | Recall LIKE | MRR RAG | MRR LIKE |
-| --------------- | ----- | ---------- | ----------- | ------- | -------- |
-| exact\_match    | 5     | 1.00       | 1.00        | 1.00    | 1.00     |
-| multi\_concept  | 5     | 0.83       | 0.73        | 0.84    | 0.90     |
-| paraphrase      | 5     | 1.00       | 0.60        | 0.77    | 0.44     |
-| synonym         | 5     | 0.83       | 0.70        | 1.00    | 0.70     |
+| Query Type | Count | Recall RAG | Recall LIKE | MRR RAG | MRR LIKE |
+|------------|-------|------------|-------------|---------|----------|
+| exact\_match | 5 | 1.00 | 1.00 | 1.00 | 1.00 |
+| multi\_concept | 5 | 0.83 | 0.73 | 0.84 | 0.90 |
+| paraphrase | 5 | 1.00 | 0.60 | 0.77 | 0.44 |
+| synonym | 5 | 0.83 | 0.70 | 1.00 | 0.70 |
 
-RAG wins on paraphrase (+40% recall, +33% MRR) and multi-concept (+10% recall) queries. On exact-match queries (the control group), both methods tie at 1.00, confirming the baseline is fair. Keyword search is competitive on multi-concept MRR, showing it handles literal term overlap well.
+RAG wins on paraphrase (+40% recall, +33% MRR) and synonym (+13% recall, +30% MRR) queries. On exact-match queries (the control group), both methods tie at 1.00, confirming the baseline is fair.
 
 ### Side-by-Side Examples
 
 **Query:** "What makes products easy to use without reading instructions?"
 
-- **RAG returns:** Recipe Ingredient Tracker, Design of Everyday Things, Road Trip Planning, Atomic Habits, Thinking Fast and Slow
-- **Keyword returns:** Atomic Habits, Code Review Checklist, Budget Backpacking, Pacific Crest Trail, Thinking Fast and Slow
-- *RAG found the Design of Everyday Things note (affordances, signifiers); keyword search missed it because "instructions" and "easy to use" don't appear verbatim.*
+- **RAG returns:** Design of Everyday Things, Recipe Ingredient Tracker, Road Trip Planning
+- **Keyword returns:** Atomic Habits, Code Review Checklist, Budget Backpacking
+- *RAG found the Design of Everyday Things note (affordances, signifiers); keyword missed it because "instructions" and "easy to use" don't appear verbatim.*
 
 **Query:** "How should I write software interfaces that other developers will enjoy using?"
 
-- **RAG returns:** Pragmatic Programmer, Deploying Python Apps, API Design Best Practices, Learning Rust, Code Review Checklist
-- **Keyword returns:** Design of Everyday Things, Atomic Habits, Thai Green Curry, Thinking Fast and Slow, Deep Work
-- *RAG placed the API Design note in the top results; keyword search missed it because "interfaces" appears in unrelated contexts.*
+- **RAG returns:** Pragmatic Programmer, Deploying Python Apps, API Design Best Practices
+- **Keyword returns:** Design of Everyday Things, Atomic Habits, Thai Green Curry
+- *RAG placed the API Design note in the top results; keyword missed it because "interfaces" appears in unrelated contexts.*
+
+[View benchmark visualization](docs/benchmarks/) | [Eval methodology](docs/EVALUATION.md)
+
+## Design Decisions
+
+Key architectural choices, documented as [ADRs](docs/decisions/):
+
+- **[No LangChain](docs/decisions/0001-no-langchain.md)** -- 4 direct deps, not 50+ transitive
+- **[Local ONNX Embeddings](docs/decisions/0002-local-onnx-embeddings.md)** -- No note data leaves the machine
+- **[Markdown-Aware Chunking](docs/decisions/0003-chunk-sizing-strategy.md)** -- Split on headings, not character count
+- **[MCP as Primary Interface](docs/decisions/0004-mcp-as-primary-interface.md)** -- AI agents are the primary users
+- **[Incremental Sync](docs/decisions/0005-incremental-sync-via-timestamps.md)** -- Core Data timestamps for change detection
+- **[Hand-Rolled Eval](docs/decisions/0006-hand-rolled-eval-framework.md)** -- pytest + JSON fixtures, no eval framework
+- **[MIT License](docs/decisions/0007-mit-license.md)** -- Maximum adoption
+
+[Read the full story: Building a Production RAG Pipeline Without LangChain](docs/BUILDING.md)
+
+## CLI Reference
+
+```shell
+bear-rag index              # Full rebuild -- wipe and re-index all notes
+bear-rag sync               # Incremental update since last sync
+bear-rag sync --dry-run     # Preview what would change
+bear-rag ask "question"     # One-shot query
+bear-rag ask                # Interactive REPL mode
+bear-rag status             # Show index stats and last sync time
+bear-rag demo               # Self-contained benchmark demo (no Bear DB required)
+```
+
+## Project Structure
+
+| Module | Purpose |
+|--------|---------|
+| `bear_reader.py` | Reads notes and tags from Bear's SQLite database |
+| `chunker.py` | Markdown-aware splitting at headings with overlap |
+| `store.py` | ChromaDB collection management with ONNX embeddings |
+| `generator.py` | Prompt construction and Claude API calls |
+| `sync.py` | Incremental sync with timestamp-based change detection |
+| `cli.py` | argparse entry point with subcommands |
+| `mcp_server.py` | MCP server exposing search, read, list, sync, status |
+| `demo.py` | Self-contained benchmark demo with inline corpus |
+| `config.py` | Constants, embedding model pin, telemetry disable |
+
+## Configuration
+
+All constants live in `bear_rag/config.py`:
+
+| Constant | Default | Description |
+|----------|---------|-------------|
+| `BEAR_DB_PATH` | `~/Library/Group Containers/.../database.sqlite` | Bear SQLite database path |
+| `DATA_DIR` | `~/.bear-rag` | Persistent state directory |
+| `CHROMA_DIR` | `~/.bear-rag/chroma` | ChromaDB storage |
+| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Pinned embedding model |
+| `MAX_CHUNK_WORDS` | 300 | Target max words per chunk (~390 tokens) |
+| `MIN_CHUNK_WORDS` | 30 | Below this, merge into adjacent chunk |
+| `OVERLAP_WORDS` | 40 | Word overlap when splitting oversized chunks |
 
 ## Development
 
-```Shell
-uv sync --all-extras       # install dev dependencies
-uv run pytest -v           # run tests
-uv run pytest -m eval -v   # run eval suite only
+```shell
+uv sync --all-extras       # Install dev dependencies
+uv run pytest -v           # Run tests (131 unit tests)
+uv run pytest -m eval -v   # Run eval suite (27 eval tests)
+uv run bear-rag demo       # Run self-contained benchmark demo
 ```
 
-To run the eval with the optional LLM judge (requires `ANTHROPIC_API_KEY`):
+With the optional LLM judge (requires `ANTHROPIC_API_KEY`):
 
-```Shell
+```shell
 EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
 ```
 
+Regenerate all presentation artifacts:
+
+```shell
+bash scripts/showcase.sh
+```
+
+## License
+
+[MIT](LICENSE)
