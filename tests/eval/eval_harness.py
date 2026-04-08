@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import warnings
 from collections import Counter
@@ -97,9 +98,11 @@ class EvalCorpus:
 
         hit_counts: Counter[int] = Counter()
         for word in words:
-            pattern = f"%{word}%"
+            escaped = word.replace("%", r"\%").replace("_", r"\_")
+            pattern = f"%{escaped}%"
             rows = self._db.execute(
-                "SELECT DISTINCT pk FROM notes WHERE text LIKE ? OR title LIKE ?",
+                "SELECT DISTINCT pk FROM notes "
+                "WHERE text LIKE ? ESCAPE '\\' OR title LIKE ? ESCAPE '\\'",
                 (pattern, pattern),
             ).fetchall()
             for (pk,) in rows:
@@ -132,8 +135,9 @@ def _tokenize_query(query: str) -> list[str]:
         "same", "so", "than", "too", "very", "just", "because", "but", "and",
         "or", "if", "while", "about", "what", "which", "who", "whom", "this",
         "that", "these", "those", "am", "it", "its", "i", "me", "my", "we",
+        "our", "you", "your", "he", "her", "him", "his", "she", "they", "them",
     }
-    words = query.lower().split()
+    words = re.findall(r"\w+", query.lower())
     return [w for w in words if len(w) > 1 and w not in stop_words]
 
 
@@ -348,7 +352,7 @@ def render_report(results_path: Path) -> str:
     for ex in examples:
         gap = ex["recall_semantic"] - ex["recall_like"]
         lines.append(f"### {ex['id']}: {ex['query']}")
-        lines.append(f"*Type: {ex['type']} | Recall gap: +{gap:.2f}*\n")
+        lines.append(f"*Type: {ex['type']} | Recall gap: {gap:+.2f}*\n")
         lines.append(
             f"**RAG returns:** {', '.join(ex['semantic_titles'][:5])}"
         )

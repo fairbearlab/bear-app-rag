@@ -73,34 +73,34 @@ RAG vs keyword (SQLite LIKE) retrieval on a 25-note synthetic corpus with 20 eva
 
 | Metric       | RAG  | Keyword (LIKE) |
 | ------------ | ---- | -------------- |
-| Recall@5     | 0.92 | 0.65           |
-| MRR          | 0.90 | 0.65           |
-| Groundedness | 0.86 | 0.71           |
+| Recall@5     | 0.92 | 0.76           |
+| MRR          | 0.90 | 0.76           |
+| Groundedness | 0.86 | 0.80           |
 
 ### By Query Type
 
 | Query Type      | Count | Recall RAG | Recall LIKE | MRR RAG | MRR LIKE |
 | --------------- | ----- | ---------- | ----------- | ------- | -------- |
 | exact\_match    | 5     | 1.00       | 1.00        | 1.00    | 1.00     |
-| multi\_concept  | 5     | 0.83       | 0.50        | 0.84    | 0.70     |
-| paraphrase      | 5     | 1.00       | 0.40        | 0.77    | 0.30     |
-| synonym         | 5     | 0.83       | 0.70        | 1.00    | 0.60     |
+| multi\_concept  | 5     | 0.83       | 0.73        | 0.84    | 0.90     |
+| paraphrase      | 5     | 1.00       | 0.60        | 0.77    | 0.44     |
+| synonym         | 5     | 0.83       | 0.70        | 1.00    | 0.70     |
 
-RAG wins decisively on paraphrase (+60%), multi-concept (+33%), and synonym (+13%) queries. On exact-match queries (the control group), both methods tie at 1.00 — confirming the baseline is fair.
+RAG wins on paraphrase (+40% recall, +33% MRR) and multi-concept (+10% recall) queries. On exact-match queries (the control group), both methods tie at 1.00, confirming the baseline is fair. Keyword search is competitive on multi-concept MRR, showing it handles literal term overlap well.
 
 ### Side-by-Side Examples
 
-**Query:** "How do our minds take shortcuts when making choices?"
+**Query:** "What makes products easy to use without reading instructions?"
 
-- **RAG returns:** Thinking Fast and Slow, Deep Work, Atomic Habits, Design of Everyday Things
-- **Keyword returns:** Sourdough Bread Baking, Meal Prep, Fermented Foods, Digital Nomad, Atomic Habits
-- *Keyword matched "making" and "choices" literally; RAG understood the semantic meaning and found the cognitive biases note.*
+- **RAG returns:** Recipe Ingredient Tracker, Design of Everyday Things, Road Trip Planning, Atomic Habits, Thinking Fast and Slow
+- **Keyword returns:** Atomic Habits, Code Review Checklist, Budget Backpacking, Pacific Crest Trail, Thinking Fast and Slow
+- *RAG found the Design of Everyday Things note (affordances, signifiers); keyword search missed it because "instructions" and "easy to use" don't appear verbatim.*
 
 **Query:** "How should I write software interfaces that other developers will enjoy using?"
 
 - **RAG returns:** Pragmatic Programmer, Deploying Python Apps, API Design Best Practices, Learning Rust, Code Review Checklist
-- **Keyword returns:** Atomic Habits, Thinking Fast and Slow, Design of Everyday Things, Deep Work, Pragmatic Programmer
-- *RAG placed the API Design note in the top results; keyword search missed it entirely because "interfaces" appears in unrelated contexts.*
+- **Keyword returns:** Design of Everyday Things, Atomic Habits, Thai Green Curry, Thinking Fast and Slow, Deep Work
+- *RAG placed the API Design note in the top results; keyword search missed it because "interfaces" appears in unrelated contexts.*
 
 ## Development
 

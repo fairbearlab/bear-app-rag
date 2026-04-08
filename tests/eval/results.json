@@ -62,7 +62,8 @@
         25,
         4,
         7,
-        19
+        17,
+        18
       ],
       "semantic_titles": [
         "Japanese Knife Skills",
@@ -75,7 +76,8 @@
         "Garden Project Planning",
         "Japanese Knife Skills",
         "Hiking the Pacific Crest Trail",
-        "API Design Best Practices"
+        "Database Migration Strategies",
+        "Debugging Memory Leaks"
       ],
       "recall_semantic": 1.0,
       "recall_like": 1.0,
@@ -185,11 +187,11 @@
         25
       ],
       "like_pks": [
-        13,
         5,
-        6,
-        7,
-        8
+        13,
+        22,
+        24,
+        6
       ],
       "semantic_titles": [
         "Fermented Foods Guide",
@@ -199,16 +201,16 @@
         "Garden Project Planning"
       ],
       "like_titles": [
-        "Atomic Habits - Key Takeaways",
         "Fermented Foods Guide",
-        "Budget Backpacking Southeast Asia",
-        "Hiking the Pacific Crest Trail",
-        "Tokyo Food Markets"
+        "Atomic Habits - Key Takeaways",
+        "App Idea: Recipe Ingredient Tracker",
+        "Home Office Ergonomics",
+        "Budget Backpacking Southeast Asia"
       ],
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
-      "mrr_like": 0.5,
+      "mrr_like": 1.0,
       "groundedness_semantic": 0.6666666666666666,
       "groundedness_like": 1.0
     },
@@ -230,7 +232,7 @@
         3,
         5,
         10,
-        13
+        11
       ],
       "semantic_titles": [
         "Thinking Fast and Slow - Reading Notes",
@@ -243,14 +245,14 @@
         "Meal Prep for Busy Weeks",
         "Fermented Foods Guide",
         "Digital Nomad Setup in Lisbon",
-        "Atomic Habits - Key Takeaways"
+        "Thinking Fast and Slow - Reading Notes"
       ],
       "recall_semantic": 1.0,
-      "recall_like": 0.0,
+      "recall_like": 1.0,
       "mrr_semantic": 1.0,
-      "mrr_like": 0.0,
+      "mrr_like": 0.2,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 0.16666666666666666
+      "groundedness_like": 1.0
     },
     {
       "id": "q7",
@@ -309,11 +311,11 @@
         15
       ],
       "like_pks": [
-        10,
         16,
-        8,
+        10,
         15,
-        18
+        19,
+        8
       ],
       "semantic_titles": [
         "Deploying Python Apps to Production",
@@ -323,16 +325,16 @@
         "The Pragmatic Programmer - Notes"
       ],
       "like_titles": [
-        "Digital Nomad Setup in Lisbon",
         "Deploying Python Apps to Production",
-        "Tokyo Food Markets",
+        "Digital Nomad Setup in Lisbon",
         "The Pragmatic Programmer - Notes",
-        "Debugging Memory Leaks"
+        "API Design Best Practices",
+        "Tokyo Food Markets"
       ],
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
-      "mrr_like": 0.5,
+      "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
       "groundedness_like": 1.0
     },
@@ -353,9 +355,9 @@
       "like_pks": [
         13,
         7,
+        8,
         11,
-        12,
-        15
+        12
       ],
       "semantic_titles": [
         "Atomic Habits - Key Takeaways",
@@ -367,9 +369,9 @@
       "like_titles": [
         "Atomic Habits - Key Takeaways",
         "Hiking the Pacific Crest Trail",
+        "Tokyo Food Markets",
         "Thinking Fast and Slow - Reading Notes",
-        "The Design of Everyday Things - Summary",
-        "The Pragmatic Programmer - Notes"
+        "The Design of Everyday Things - Summary"
       ],
       "recall_semantic": 1.0,
       "recall_like": 1.0,
@@ -393,11 +395,11 @@
         20
       ],
       "like_pks": [
-        13,
-        11,
         12,
-        14,
-        15
+        13,
+        1,
+        11,
+        14
       ],
       "semantic_titles": [
         "The Pragmatic Programmer - Notes",
@@ -407,18 +409,18 @@
         "Code Review Checklist"
       ],
       "like_titles": [
-        "Atomic Habits - Key Takeaways",
-        "Thinking Fast and Slow - Reading Notes",
         "The Design of Everyday Things - Summary",
-        "Deep Work - Reflections",
-        "The Pragmatic Programmer - Notes"
+        "Atomic Habits - Key Takeaways",
+        "Thai Green Curry Recipe",
+        "Thinking Fast and Slow - Reading Notes",
+        "Deep Work - Reflections"
       ],
       "recall_semantic": 1.0,
       "recall_like": 0.0,
       "mrr_semantic": 0.3333333333333333,
       "mrr_like": 0.0,
       "groundedness_semantic": 0.8333333333333334,
-      "groundedness_like": 0.3333333333333333
+      "groundedness_like": 0.16666666666666666
     },
     {
       "id": "q11",
@@ -437,7 +439,9 @@
         22
       ],
       "like_pks": [
+        1,
         3,
+        6,
         21,
         23
       ],
@@ -449,16 +453,18 @@
         "App Idea: Recipe Ingredient Tracker"
       ],
       "like_titles": [
+        "Thai Green Curry Recipe",
         "Meal Prep for Busy Weeks",
+        "Budget Backpacking Southeast Asia",
         "Weekly Reflection - January 15",
         "Learning Rust - Week 3"
       ],
       "recall_semantic": 0.6666666666666666,
-      "recall_like": 0.0,
+      "recall_like": 0.6666666666666666,
       "mrr_semantic": 1.0,
-      "mrr_like": 0.0,
+      "mrr_like": 1.0,
       "groundedness_semantic": 0.5714285714285714,
-      "groundedness_like": 0.0
+      "groundedness_like": 0.5714285714285714
     },
     {
       "id": "q12",
@@ -477,8 +483,8 @@
         16
       ],
       "like_pks": [
-        13,
         21,
+        13,
         25,
         5,
         6
@@ -491,8 +497,8 @@
         "Deploying Python Apps to Production"
       ],
       "like_titles": [
-        "Atomic Habits - Key Takeaways",
         "Weekly Reflection - January 15",
+        "Atomic Habits - Key Takeaways",
         "Garden Project Planning",
         "Fermented Foods Guide",
         "Budget Backpacking Southeast Asia"
@@ -500,7 +506,7 @@
       "recall_semantic": 1.0,
       "recall_like": 0.3333333333333333,
       "mrr_semantic": 1.0,
-      "mrr_like": 0.5,
+      "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
       "groundedness_like": 0.6666666666666666
     },
@@ -522,10 +528,10 @@
       ],
       "like_pks": [
         15,
+        23,
+        10,
         12,
-        17,
-        18,
-        19
+        17
       ],
       "semantic_titles": [
         "The Pragmatic Programmer - Notes",
@@ -536,10 +542,10 @@
       ],
       "like_titles": [
         "The Pragmatic Programmer - Notes",
+        "Learning Rust - Week 3",
+        "Digital Nomad Setup in Lisbon",
         "The Design of Everyday Things - Summary",
-        "Database Migration Strategies",
-        "Debugging Memory Leaks",
-        "API Design Best Practices"
+        "Database Migration Strategies"
       ],
       "recall_semantic": 1.0,
       "recall_like": 0.6666666666666666,
@@ -567,9 +573,9 @@
       "like_pks": [
         24,
         10,
-        8,
         14,
-        16
+        16,
+        21
       ],
       "semantic_titles": [
         "Digital Nomad Setup in Lisbon",
@@ -581,9 +587,9 @@
       "like_titles": [
         "Home Office Ergonomics",
         "Digital Nomad Setup in Lisbon",
-        "Tokyo Food Markets",
         "Deep Work - Reflections",
-        "Deploying Python Apps to Production"
+        "Deploying Python Apps to Production",
+        "Weekly Reflection - January 15"
       ],
       "recall_semantic": 1.0,
       "recall_like": 1.0,
@@ -608,11 +614,11 @@
         25
       ],
       "like_pks": [
+        13,
+        25,
         2,
-        7,
-        11,
-        12,
-        13
+        5,
+        6
       ],
       "semantic_titles": [
         "Meal Prep for Busy Weeks",
@@ -622,18 +628,18 @@
         "Garden Project Planning"
       ],
       "like_titles": [
+        "Atomic Habits - Key Takeaways",
+        "Garden Project Planning",
         "Sourdough Bread Baking",
-        "Hiking the Pacific Crest Trail",
-        "Thinking Fast and Slow - Reading Notes",
-        "The Design of Everyday Things - Summary",
-        "Atomic Habits - Key Takeaways"
+        "Fermented Foods Guide",
+        "Budget Backpacking Southeast Asia"
       ],
       "recall_semantic": 0.5,
-      "recall_like": 0.5,
+      "recall_like": 1.0,
       "mrr_semantic": 0.2,
-      "mrr_like": 1.0,
+      "mrr_like": 0.5,
       "groundedness_semantic": 0.3333333333333333,
-      "groundedness_like": 0.3333333333333333
+      "groundedness_like": 1.0
     },
     {
       "id": "q16",
@@ -729,8 +735,10 @@
       ],
       "like_pks": [
         16,
+        11,
         18,
-        23
+        23,
+        1
       ],
       "semantic_titles": [
         "Deploying Python Apps to Production",
@@ -741,8 +749,10 @@
       ],
       "like_titles": [
         "Deploying Python Apps to Production",
+        "Thinking Fast and Slow - Reading Notes",
         "Debugging Memory Leaks",
-        "Learning Rust - Week 3"
+        "Learning Rust - Week 3",
+        "Thai Green Curry Recipe"
       ],
       "recall_semantic": 1.0,
       "recall_like": 1.0,
@@ -836,11 +846,11 @@
     "overall": {
       "count": 20,
       "recall_semantic": 0.9167,
-      "recall_like": 0.65,
+      "recall_like": 0.7583,
       "mrr_semantic": 0.9017,
-      "mrr_like": 0.65,
+      "mrr_like": 0.76,
       "groundedness_semantic": 0.8619,
-      "groundedness_like": 0.7083
+      "groundedness_like": 0.8036
     },
     "by_type": {
       "exact_match": {
@@ -855,27 +865,27 @@
       "multi_concept": {
         "count": 5,
         "recall_semantic": 0.8333,
-        "recall_like": 0.5,
+        "recall_like": 0.7333,
         "mrr_semantic": 0.84,
-        "mrr_like": 0.7,
+        "mrr_like": 0.9,
         "groundedness_semantic": 0.681,
-        "groundedness_like": 0.5333
+        "groundedness_like": 0.781
       },
       "paraphrase": {
         "count": 5,
         "recall_semantic": 1.0,
-        "recall_like": 0.4,
+        "recall_like": 0.6,
         "mrr_semantic": 0.7667,
-        "mrr_like": 0.3,
+        "mrr_like": 0.44,
         "groundedness_semantic": 0.8333,
-        "groundedness_like": 0.5333
+        "groundedness_like": 0.6667
       },
       "synonym": {
         "count": 5,
         "recall_semantic": 0.8333,
         "recall_like": 0.7,
         "mrr_semantic": 1.0,
-        "mrr_like": 0.6,
+        "mrr_like": 0.7,
         "groundedness_semantic": 0.9333,
         "groundedness_like": 0.7667
       }
