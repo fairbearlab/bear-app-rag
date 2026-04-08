@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import chromadb
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 from bear_rag import config
 from bear_rag.models import Chunk, ChunkMetadata
@@ -12,7 +13,10 @@ class NoteStore:
     def __init__(self, persist_dir: Path = config.CHROMA_DIR) -> None:
         persist_dir.mkdir(parents=True, exist_ok=True)
         self._client = chromadb.PersistentClient(path=str(persist_dir))
-        self._collection = self._client.get_or_create_collection(name=_COLLECTION_NAME)
+        self._collection = self._client.get_or_create_collection(
+            name=_COLLECTION_NAME,
+            embedding_function=DefaultEmbeddingFunction(),
+        )
 
     # ------------------------------------------------------------------
     # Write operations
@@ -37,7 +41,10 @@ class NoteStore:
     def reset(self) -> None:
         """Delete and recreate the collection, clearing all data."""
         self._client.delete_collection(name=_COLLECTION_NAME)
-        self._collection = self._client.create_collection(name=_COLLECTION_NAME)
+        self._collection = self._client.create_collection(
+            name=_COLLECTION_NAME,
+            embedding_function=DefaultEmbeddingFunction(),
+        )
 
     # ------------------------------------------------------------------
     # Read operations

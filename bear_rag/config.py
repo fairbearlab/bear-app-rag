@@ -1,4 +1,13 @@
+import os
 from pathlib import Path
+
+# Disable ChromaDB telemetry before it's imported anywhere.
+# Must happen at import time because chromadb reads this env var on import.
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+
+# Embedding model — pinned for reproducible eval results across chromadb versions.
+# ChromaDB's default is all-MiniLM-L6-v2 via ONNX (Apache 2.0 licensed).
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
 # Bear database
 BEAR_DB_PATH = (
