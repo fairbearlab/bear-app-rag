@@ -1,0 +1,162 @@
+[
+  {
+    "id": "q1",
+    "query": "What are some affordable meal options while traveling?",
+    "type": "synonym",
+    "expected_note_pks": [3, 6, 8],
+    "expected_keywords": ["budget", "cheap", "cost", "street food", "meal prep", "expenses"],
+    "answer_context": "Notes about budget-friendly meal prep, cheap street food in Southeast Asia, and Tokyo market dining all discuss ways to eat well without spending much, using terms like 'budget', 'cheap', and 'cost-effective' rather than 'affordable'."
+  },
+  {
+    "id": "q2",
+    "query": "How do I maintain my kitchen tools?",
+    "type": "synonym",
+    "expected_note_pks": [4],
+    "expected_keywords": ["honing", "whetstone", "sharpening", "blade", "maintenance", "care"],
+    "answer_context": "The Japanese knife skills note covers knife maintenance in detail — whetstone technique, honing angles, hand washing, and proper storage — but uses terms like 'honing', 'sharpening', and 'blade maintenance' rather than 'maintain kitchen tools'."
+  },
+  {
+    "id": "q3",
+    "query": "What strategies exist for releasing software without downtime?",
+    "type": "synonym",
+    "expected_note_pks": [16, 17],
+    "expected_keywords": ["deploy", "zero-downtime", "rolling update", "expand-contract", "migration", "rollback"],
+    "answer_context": "The deployment and database migration notes cover zero-downtime release strategies including rolling updates, the expand-contract pattern, and rollback procedures, using terms like 'deploy' and 'ship' rather than 'releasing'."
+  },
+  {
+    "id": "q4",
+    "query": "How can I improve my concentration and avoid interruptions?",
+    "type": "synonym",
+    "expected_note_pks": [14, 24],
+    "expected_keywords": ["focus", "distraction", "deep work", "flow state", "time blocking", "workspace"],
+    "answer_context": "The Deep Work reflections and home office ergonomics notes discuss strategies for sustained focus — time blocking, environment design, shutdown rituals — using terms like 'focus', 'distraction-free', and 'flow state' rather than 'concentration' or 'interruptions'."
+  },
+  {
+    "id": "q5",
+    "query": "What are good techniques for preserving food at home?",
+    "type": "synonym",
+    "expected_note_pks": [5],
+    "expected_keywords": ["fermentation", "lactic acid", "preservation", "culturing", "sauerkraut", "probiotics"],
+    "answer_context": "The fermented foods guide covers food preservation through lactic acid fermentation, including sauerkraut, kimchi, and kombucha, using terms like 'fermentation', 'culturing', and 'preservation' rather than the general phrase 'preserving food'."
+  },
+  {
+    "id": "q6",
+    "query": "How do our minds take shortcuts when making choices?",
+    "type": "paraphrase",
+    "expected_note_pks": [11],
+    "expected_keywords": ["System 1", "cognitive biases", "heuristic", "anchoring", "availability", "intuitive"],
+    "answer_context": "Thinking Fast and Slow notes explain how System 1 generates automatic judgments through cognitive biases like anchoring and availability heuristics — the mental shortcuts the query asks about."
+  },
+  {
+    "id": "q7",
+    "query": "What makes products easy to use without reading instructions?",
+    "type": "paraphrase",
+    "expected_note_pks": [12],
+    "expected_keywords": ["affordances", "signifiers", "intuitive", "mapping", "feedback", "human-centered"],
+    "answer_context": "The Design of Everyday Things summary explains affordances, signifiers, natural mapping, and feedback — the design principles that make products intuitive without requiring instructions."
+  },
+  {
+    "id": "q8",
+    "query": "How do I set up an automated process to ship code changes?",
+    "type": "paraphrase",
+    "expected_note_pks": [16],
+    "expected_keywords": ["CI/CD", "pipeline", "automate", "lint", "test", "deploy", "GitHub Actions"],
+    "answer_context": "The deploying Python apps note details CI/CD pipeline setup: automated linting, testing, Docker builds, staging deployment, smoke tests, and production promotion via rolling updates."
+  },
+  {
+    "id": "q9",
+    "query": "What is the trick to building good routines that stick?",
+    "type": "paraphrase",
+    "expected_note_pks": [13],
+    "expected_keywords": ["habit stacking", "environment design", "two-minute rule", "cue", "routine", "identity"],
+    "answer_context": "Atomic Habits notes describe building lasting routines through the Four Laws: make it obvious (habit stacking, environment cues), attractive (temptation bundling), easy (two-minute rule), and satisfying (habit tracking)."
+  },
+  {
+    "id": "q10",
+    "query": "How should I write software interfaces that other developers will enjoy using?",
+    "type": "paraphrase",
+    "expected_note_pks": [19],
+    "expected_keywords": ["REST", "versioning", "error handling", "documentation", "OpenAPI", "endpoints"],
+    "answer_context": "The API design best practices note covers REST conventions, consistent error structures, versioning strategy, and documentation with OpenAPI specs — all aimed at creating developer-friendly interfaces."
+  },
+  {
+    "id": "q11",
+    "query": "What cooking techniques did I learn about while traveling in Asia?",
+    "type": "multi_concept",
+    "expected_note_pks": [1, 6, 8],
+    "expected_keywords": ["curry paste", "street food", "Bangkok", "Tokyo", "Tsukiji", "sushi", "wok"],
+    "answer_context": "The Thai curry recipe references a Bangkok street stall, the SE Asia backpacking note covers street food culture and costs, and the Tokyo food markets note details culinary craftsmanship at Tsukiji and depachika."
+  },
+  {
+    "id": "q12",
+    "query": "How can I track my spending on food and groceries?",
+    "type": "multi_concept",
+    "expected_note_pks": [3, 21, 22],
+    "expected_keywords": ["expenses", "spreadsheet", "groceries", "budget", "pantry", "shopping list"],
+    "answer_context": "The meal prep note discusses cost-effective grocery strategies, the weekly reflection tracks food spending in a spreadsheet, and the recipe app idea proposes automated pantry tracking and smart shopping lists."
+  },
+  {
+    "id": "q13",
+    "query": "What programming principles apply to both code and everyday life?",
+    "type": "multi_concept",
+    "expected_note_pks": [13, 15, 12],
+    "expected_keywords": ["DRY", "orthogonality", "environment design", "affordances", "habit", "broken window"],
+    "answer_context": "The Pragmatic Programmer's DRY and broken window principles parallel Atomic Habits' environment design and identity-based change. The Design of Everyday Things' affordances and feedback loops apply to both software and physical product design."
+  },
+  {
+    "id": "q14",
+    "query": "How do I set up a productive workspace for remote work?",
+    "type": "multi_concept",
+    "expected_note_pks": [10, 14, 24],
+    "expected_keywords": ["coworking", "ergonomic", "desk", "deep work", "focus", "monitor", "keyboard"],
+    "answer_context": "The digital nomad note covers coworking spaces and timezone productivity in Lisbon, Deep Work describes environment design for focus, and home office ergonomics details desk, chair, monitor, and keyboard setup for sustained productive work."
+  },
+  {
+    "id": "q15",
+    "query": "What are good weekend projects that combine outdoor activity with food?",
+    "type": "multi_concept",
+    "expected_note_pks": [2, 25],
+    "expected_keywords": ["sourdough", "weekend ritual", "raised beds", "composting", "planting", "garden"],
+    "answer_context": "Sourdough baking is described as a weekend ritual with slow fermentation timing, and the garden project planning covers building raised beds, composting, and seasonal planting — both are weekend projects connecting outdoor/hands-on activity with food production."
+  },
+  {
+    "id": "q16",
+    "query": "sourdough bread fermentation starter",
+    "type": "exact_match",
+    "expected_note_pks": [2],
+    "expected_keywords": ["sourdough", "starter", "fermentation", "flour", "hydration"],
+    "answer_context": "The sourdough baking note contains all these exact terms: starter maintenance, fermentation timing, hydration percentages, and the bread-making process."
+  },
+  {
+    "id": "q17",
+    "query": "Pacific Crest Trail gear list lightweight",
+    "type": "exact_match",
+    "expected_note_pks": [7],
+    "expected_keywords": ["Pacific Crest Trail", "gear list", "lightweight", "base weight", "shelter"],
+    "answer_context": "The PCT hiking note uses these exact terms: 'Pacific Crest Trail', 'Gear List' as a heading, 'Lightweight backpacking', and details specific gear weights."
+  },
+  {
+    "id": "q18",
+    "query": "Python CI/CD pipeline containerization",
+    "type": "exact_match",
+    "expected_note_pks": [16],
+    "expected_keywords": ["Python", "CI/CD", "pipeline", "containerization", "Docker"],
+    "answer_context": "The deploying Python apps note uses all these exact terms in its headings and content: 'Containerization', 'CI/CD Pipelines', 'Python', and 'Docker'."
+  },
+  {
+    "id": "q19",
+    "query": "Rust borrow checker ownership model",
+    "type": "exact_match",
+    "expected_note_pks": [23],
+    "expected_keywords": ["Rust", "borrow checker", "ownership", "compiler", "lifetimes"],
+    "answer_context": "The Learning Rust note uses these exact terms: 'ownership model', 'borrow checker', 'Rust', with detailed explanations of each concept."
+  },
+  {
+    "id": "q20",
+    "query": "raised bed composting seasonal planting",
+    "type": "exact_match",
+    "expected_note_pks": [25],
+    "expected_keywords": ["raised bed", "composting", "seasonal", "planting", "cedar", "soil mix"],
+    "answer_context": "The garden project planning note contains all these exact terms as section topics: 'Raised Bed Design', 'Composting Setup', and 'Seasonal Planting Schedule'."
+  }
+]

@@ -1,0 +1,894 @@
+{
+  "queries": [
+    {
+      "id": "q1",
+      "query": "What are some affordable meal options while traveling?",
+      "type": "synonym",
+      "expected_note_pks": [
+        3,
+        6,
+        8
+      ],
+      "semantic_pks": [
+        3,
+        6,
+        21,
+        10,
+        22
+      ],
+      "like_pks": [
+        3,
+        10,
+        6,
+        8,
+        21
+      ],
+      "semantic_titles": [
+        "Meal Prep for Busy Weeks",
+        "Budget Backpacking Southeast Asia",
+        "Weekly Reflection - January 15",
+        "Digital Nomad Setup in Lisbon",
+        "App Idea: Recipe Ingredient Tracker"
+      ],
+      "like_titles": [
+        "Meal Prep for Busy Weeks",
+        "Digital Nomad Setup in Lisbon",
+        "Budget Backpacking Southeast Asia",
+        "Tokyo Food Markets",
+        "Weekly Reflection - January 15"
+      ],
+      "recall_semantic": 0.6666666666666666,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q2",
+      "query": "How do I maintain my kitchen tools?",
+      "type": "synonym",
+      "expected_note_pks": [
+        4
+      ],
+      "semantic_pks": [
+        4,
+        25,
+        13,
+        22,
+        18
+      ],
+      "like_pks": [
+        25,
+        4,
+        7,
+        17,
+        18
+      ],
+      "semantic_titles": [
+        "Japanese Knife Skills",
+        "Garden Project Planning",
+        "Atomic Habits - Key Takeaways",
+        "App Idea: Recipe Ingredient Tracker",
+        "Debugging Memory Leaks"
+      ],
+      "like_titles": [
+        "Garden Project Planning",
+        "Japanese Knife Skills",
+        "Hiking the Pacific Crest Trail",
+        "Database Migration Strategies",
+        "Debugging Memory Leaks"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 0.5,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q3",
+      "query": "What strategies exist for releasing software without downtime?",
+      "type": "synonym",
+      "expected_note_pks": [
+        16,
+        17
+      ],
+      "semantic_pks": [
+        17,
+        16,
+        11,
+        18,
+        14
+      ],
+      "like_pks": [
+        17,
+        14,
+        6,
+        13,
+        15
+      ],
+      "semantic_titles": [
+        "Database Migration Strategies",
+        "Deploying Python Apps to Production",
+        "Thinking Fast and Slow - Reading Notes",
+        "Debugging Memory Leaks",
+        "Deep Work - Reflections"
+      ],
+      "like_titles": [
+        "Database Migration Strategies",
+        "Deep Work - Reflections",
+        "Budget Backpacking Southeast Asia",
+        "Atomic Habits - Key Takeaways",
+        "The Pragmatic Programmer - Notes"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 0.5,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 0.8333333333333334
+    },
+    {
+      "id": "q4",
+      "query": "How can I improve my concentration and avoid interruptions?",
+      "type": "synonym",
+      "expected_note_pks": [
+        14,
+        24
+      ],
+      "semantic_pks": [
+        14,
+        13,
+        21,
+        11,
+        9
+      ],
+      "like_pks": [
+        3,
+        5,
+        6,
+        9,
+        11
+      ],
+      "semantic_titles": [
+        "Deep Work - Reflections",
+        "Atomic Habits - Key Takeaways",
+        "Weekly Reflection - January 15",
+        "Thinking Fast and Slow - Reading Notes",
+        "Road Trip Planning Checklist"
+      ],
+      "like_titles": [
+        "Meal Prep for Busy Weeks",
+        "Fermented Foods Guide",
+        "Budget Backpacking Southeast Asia",
+        "Road Trip Planning Checklist",
+        "Thinking Fast and Slow - Reading Notes"
+      ],
+      "recall_semantic": 0.5,
+      "recall_like": 0.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 0.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 0.0
+    },
+    {
+      "id": "q5",
+      "query": "What are good techniques for preserving food at home?",
+      "type": "synonym",
+      "expected_note_pks": [
+        5
+      ],
+      "semantic_pks": [
+        5,
+        22,
+        3,
+        4,
+        25
+      ],
+      "like_pks": [
+        5,
+        13,
+        22,
+        24,
+        6
+      ],
+      "semantic_titles": [
+        "Fermented Foods Guide",
+        "App Idea: Recipe Ingredient Tracker",
+        "Meal Prep for Busy Weeks",
+        "Japanese Knife Skills",
+        "Garden Project Planning"
+      ],
+      "like_titles": [
+        "Fermented Foods Guide",
+        "Atomic Habits - Key Takeaways",
+        "App Idea: Recipe Ingredient Tracker",
+        "Home Office Ergonomics",
+        "Budget Backpacking Southeast Asia"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 0.6666666666666666,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q6",
+      "query": "How do our minds take shortcuts when making choices?",
+      "type": "paraphrase",
+      "expected_note_pks": [
+        11
+      ],
+      "semantic_pks": [
+        11,
+        14,
+        13,
+        12
+      ],
+      "like_pks": [
+        2,
+        3,
+        5,
+        10,
+        11
+      ],
+      "semantic_titles": [
+        "Thinking Fast and Slow - Reading Notes",
+        "Deep Work - Reflections",
+        "Atomic Habits - Key Takeaways",
+        "The Design of Everyday Things - Summary"
+      ],
+      "like_titles": [
+        "Sourdough Bread Baking",
+        "Meal Prep for Busy Weeks",
+        "Fermented Foods Guide",
+        "Digital Nomad Setup in Lisbon",
+        "Thinking Fast and Slow - Reading Notes"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 0.2,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q7",
+      "query": "What makes products easy to use without reading instructions?",
+      "type": "paraphrase",
+      "expected_note_pks": [
+        12
+      ],
+      "semantic_pks": [
+        22,
+        12,
+        9,
+        13,
+        11
+      ],
+      "like_pks": [
+        13,
+        20,
+        6,
+        7,
+        11
+      ],
+      "semantic_titles": [
+        "App Idea: Recipe Ingredient Tracker",
+        "The Design of Everyday Things - Summary",
+        "Road Trip Planning Checklist",
+        "Atomic Habits - Key Takeaways",
+        "Thinking Fast and Slow - Reading Notes"
+      ],
+      "like_titles": [
+        "Atomic Habits - Key Takeaways",
+        "Code Review Checklist",
+        "Budget Backpacking Southeast Asia",
+        "Hiking the Pacific Crest Trail",
+        "Thinking Fast and Slow - Reading Notes"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 0.0,
+      "mrr_semantic": 0.5,
+      "mrr_like": 0.0,
+      "groundedness_semantic": 0.3333333333333333,
+      "groundedness_like": 0.3333333333333333
+    },
+    {
+      "id": "q8",
+      "query": "How do I set up an automated process to ship code changes?",
+      "type": "paraphrase",
+      "expected_note_pks": [
+        16
+      ],
+      "semantic_pks": [
+        16,
+        17,
+        20,
+        22,
+        15
+      ],
+      "like_pks": [
+        16,
+        10,
+        15,
+        19,
+        8
+      ],
+      "semantic_titles": [
+        "Deploying Python Apps to Production",
+        "Database Migration Strategies",
+        "Code Review Checklist",
+        "App Idea: Recipe Ingredient Tracker",
+        "The Pragmatic Programmer - Notes"
+      ],
+      "like_titles": [
+        "Deploying Python Apps to Production",
+        "Digital Nomad Setup in Lisbon",
+        "The Pragmatic Programmer - Notes",
+        "API Design Best Practices",
+        "Tokyo Food Markets"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q9",
+      "query": "What is the trick to building good routines that stick?",
+      "type": "paraphrase",
+      "expected_note_pks": [
+        13
+      ],
+      "semantic_pks": [
+        13,
+        14,
+        24,
+        21,
+        11
+      ],
+      "like_pks": [
+        13,
+        7,
+        8,
+        11,
+        12
+      ],
+      "semantic_titles": [
+        "Atomic Habits - Key Takeaways",
+        "Deep Work - Reflections",
+        "Home Office Ergonomics",
+        "Weekly Reflection - January 15",
+        "Thinking Fast and Slow - Reading Notes"
+      ],
+      "like_titles": [
+        "Atomic Habits - Key Takeaways",
+        "Hiking the Pacific Crest Trail",
+        "Tokyo Food Markets",
+        "Thinking Fast and Slow - Reading Notes",
+        "The Design of Everyday Things - Summary"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 0.8333333333333334
+    },
+    {
+      "id": "q10",
+      "query": "How should I write software interfaces that other developers will enjoy using?",
+      "type": "paraphrase",
+      "expected_note_pks": [
+        19
+      ],
+      "semantic_pks": [
+        15,
+        16,
+        19,
+        23,
+        20
+      ],
+      "like_pks": [
+        12,
+        13,
+        1,
+        11,
+        14
+      ],
+      "semantic_titles": [
+        "The Pragmatic Programmer - Notes",
+        "Deploying Python Apps to Production",
+        "API Design Best Practices",
+        "Learning Rust - Week 3",
+        "Code Review Checklist"
+      ],
+      "like_titles": [
+        "The Design of Everyday Things - Summary",
+        "Atomic Habits - Key Takeaways",
+        "Thai Green Curry Recipe",
+        "Thinking Fast and Slow - Reading Notes",
+        "Deep Work - Reflections"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 0.0,
+      "mrr_semantic": 0.3333333333333333,
+      "mrr_like": 0.0,
+      "groundedness_semantic": 0.8333333333333334,
+      "groundedness_like": 0.16666666666666666
+    },
+    {
+      "id": "q11",
+      "query": "What cooking techniques did I learn about while traveling in Asia?",
+      "type": "multi_concept",
+      "expected_note_pks": [
+        1,
+        6,
+        8
+      ],
+      "semantic_pks": [
+        1,
+        5,
+        4,
+        6,
+        22
+      ],
+      "like_pks": [
+        1,
+        3,
+        6,
+        21,
+        23
+      ],
+      "semantic_titles": [
+        "Thai Green Curry Recipe",
+        "Fermented Foods Guide",
+        "Japanese Knife Skills",
+        "Budget Backpacking Southeast Asia",
+        "App Idea: Recipe Ingredient Tracker"
+      ],
+      "like_titles": [
+        "Thai Green Curry Recipe",
+        "Meal Prep for Busy Weeks",
+        "Budget Backpacking Southeast Asia",
+        "Weekly Reflection - January 15",
+        "Learning Rust - Week 3"
+      ],
+      "recall_semantic": 0.6666666666666666,
+      "recall_like": 0.6666666666666666,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 0.5714285714285714,
+      "groundedness_like": 0.5714285714285714
+    },
+    {
+      "id": "q12",
+      "query": "How can I track my spending on food and groceries?",
+      "type": "multi_concept",
+      "expected_note_pks": [
+        3,
+        21,
+        22
+      ],
+      "semantic_pks": [
+        21,
+        22,
+        3,
+        9,
+        16
+      ],
+      "like_pks": [
+        21,
+        13,
+        25,
+        5,
+        6
+      ],
+      "semantic_titles": [
+        "Weekly Reflection - January 15",
+        "App Idea: Recipe Ingredient Tracker",
+        "Meal Prep for Busy Weeks",
+        "Road Trip Planning Checklist",
+        "Deploying Python Apps to Production"
+      ],
+      "like_titles": [
+        "Weekly Reflection - January 15",
+        "Atomic Habits - Key Takeaways",
+        "Garden Project Planning",
+        "Fermented Foods Guide",
+        "Budget Backpacking Southeast Asia"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 0.3333333333333333,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 0.6666666666666666
+    },
+    {
+      "id": "q13",
+      "query": "What programming principles apply to both code and everyday life?",
+      "type": "multi_concept",
+      "expected_note_pks": [
+        13,
+        15,
+        12
+      ],
+      "semantic_pks": [
+        15,
+        13,
+        12,
+        23,
+        14
+      ],
+      "like_pks": [
+        15,
+        23,
+        10,
+        12,
+        17
+      ],
+      "semantic_titles": [
+        "The Pragmatic Programmer - Notes",
+        "Atomic Habits - Key Takeaways",
+        "The Design of Everyday Things - Summary",
+        "Learning Rust - Week 3",
+        "Deep Work - Reflections"
+      ],
+      "like_titles": [
+        "The Pragmatic Programmer - Notes",
+        "Learning Rust - Week 3",
+        "Digital Nomad Setup in Lisbon",
+        "The Design of Everyday Things - Summary",
+        "Database Migration Strategies"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 0.6666666666666666,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 0.5,
+      "groundedness_like": 0.6666666666666666
+    },
+    {
+      "id": "q14",
+      "query": "How do I set up a productive workspace for remote work?",
+      "type": "multi_concept",
+      "expected_note_pks": [
+        10,
+        14,
+        24
+      ],
+      "semantic_pks": [
+        10,
+        14,
+        16,
+        24,
+        21
+      ],
+      "like_pks": [
+        24,
+        10,
+        14,
+        16,
+        21
+      ],
+      "semantic_titles": [
+        "Digital Nomad Setup in Lisbon",
+        "Deep Work - Reflections",
+        "Deploying Python Apps to Production",
+        "Home Office Ergonomics",
+        "Weekly Reflection - January 15"
+      ],
+      "like_titles": [
+        "Home Office Ergonomics",
+        "Digital Nomad Setup in Lisbon",
+        "Deep Work - Reflections",
+        "Deploying Python Apps to Production",
+        "Weekly Reflection - January 15"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q15",
+      "query": "What are good weekend projects that combine outdoor activity with food?",
+      "type": "multi_concept",
+      "expected_note_pks": [
+        2,
+        25
+      ],
+      "semantic_pks": [
+        3,
+        21,
+        22,
+        6,
+        25
+      ],
+      "like_pks": [
+        13,
+        25,
+        2,
+        5,
+        6
+      ],
+      "semantic_titles": [
+        "Meal Prep for Busy Weeks",
+        "Weekly Reflection - January 15",
+        "App Idea: Recipe Ingredient Tracker",
+        "Budget Backpacking Southeast Asia",
+        "Garden Project Planning"
+      ],
+      "like_titles": [
+        "Atomic Habits - Key Takeaways",
+        "Garden Project Planning",
+        "Sourdough Bread Baking",
+        "Fermented Foods Guide",
+        "Budget Backpacking Southeast Asia"
+      ],
+      "recall_semantic": 0.5,
+      "recall_like": 1.0,
+      "mrr_semantic": 0.2,
+      "mrr_like": 0.5,
+      "groundedness_semantic": 0.3333333333333333,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q16",
+      "query": "sourdough bread fermentation starter",
+      "type": "exact_match",
+      "expected_note_pks": [
+        2
+      ],
+      "semantic_pks": [
+        2,
+        5,
+        22,
+        1,
+        19
+      ],
+      "like_pks": [
+        2,
+        5
+      ],
+      "semantic_titles": [
+        "Sourdough Bread Baking",
+        "Fermented Foods Guide",
+        "App Idea: Recipe Ingredient Tracker",
+        "Thai Green Curry Recipe",
+        "API Design Best Practices"
+      ],
+      "like_titles": [
+        "Sourdough Bread Baking",
+        "Fermented Foods Guide"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q17",
+      "query": "Pacific Crest Trail gear list lightweight",
+      "type": "exact_match",
+      "expected_note_pks": [
+        7
+      ],
+      "semantic_pks": [
+        7,
+        9,
+        6,
+        4,
+        20
+      ],
+      "like_pks": [
+        7,
+        9,
+        11,
+        13,
+        14
+      ],
+      "semantic_titles": [
+        "Hiking the Pacific Crest Trail",
+        "Road Trip Planning Checklist",
+        "Budget Backpacking Southeast Asia",
+        "Japanese Knife Skills",
+        "Code Review Checklist"
+      ],
+      "like_titles": [
+        "Hiking the Pacific Crest Trail",
+        "Road Trip Planning Checklist",
+        "Thinking Fast and Slow - Reading Notes",
+        "Atomic Habits - Key Takeaways",
+        "Deep Work - Reflections"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q18",
+      "query": "Python CI/CD pipeline containerization",
+      "type": "exact_match",
+      "expected_note_pks": [
+        16
+      ],
+      "semantic_pks": [
+        16,
+        18,
+        23,
+        15,
+        17
+      ],
+      "like_pks": [
+        16,
+        11,
+        18,
+        23,
+        1
+      ],
+      "semantic_titles": [
+        "Deploying Python Apps to Production",
+        "Debugging Memory Leaks",
+        "Learning Rust - Week 3",
+        "The Pragmatic Programmer - Notes",
+        "Database Migration Strategies"
+      ],
+      "like_titles": [
+        "Deploying Python Apps to Production",
+        "Thinking Fast and Slow - Reading Notes",
+        "Debugging Memory Leaks",
+        "Learning Rust - Week 3",
+        "Thai Green Curry Recipe"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q19",
+      "query": "Rust borrow checker ownership model",
+      "type": "exact_match",
+      "expected_note_pks": [
+        23
+      ],
+      "semantic_pks": [
+        23,
+        4,
+        20,
+        9,
+        15
+      ],
+      "like_pks": [
+        23,
+        2,
+        22
+      ],
+      "semantic_titles": [
+        "Learning Rust - Week 3",
+        "Japanese Knife Skills",
+        "Code Review Checklist",
+        "Road Trip Planning Checklist",
+        "The Pragmatic Programmer - Notes"
+      ],
+      "like_titles": [
+        "Learning Rust - Week 3",
+        "Sourdough Bread Baking",
+        "App Idea: Recipe Ingredient Tracker"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q20",
+      "query": "raised bed composting seasonal planting",
+      "type": "exact_match",
+      "expected_note_pks": [
+        25
+      ],
+      "semantic_pks": [
+        25,
+        21,
+        3,
+        7,
+        6
+      ],
+      "like_pks": [
+        25,
+        21,
+        3,
+        6,
+        8
+      ],
+      "semantic_titles": [
+        "Garden Project Planning",
+        "Weekly Reflection - January 15",
+        "Meal Prep for Busy Weeks",
+        "Hiking the Pacific Crest Trail",
+        "Budget Backpacking Southeast Asia"
+      ],
+      "like_titles": [
+        "Garden Project Planning",
+        "Weekly Reflection - January 15",
+        "Meal Prep for Busy Weeks",
+        "Budget Backpacking Southeast Asia",
+        "Tokyo Food Markets"
+      ],
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
+    }
+  ],
+  "aggregates": {
+    "overall": {
+      "count": 20,
+      "recall_semantic": 0.9167,
+      "recall_like": 0.7583,
+      "mrr_semantic": 0.9017,
+      "mrr_like": 0.76,
+      "groundedness_semantic": 0.8619,
+      "groundedness_like": 0.8036
+    },
+    "by_type": {
+      "exact_match": {
+        "count": 5,
+        "recall_semantic": 1.0,
+        "recall_like": 1.0,
+        "mrr_semantic": 1.0,
+        "mrr_like": 1.0,
+        "groundedness_semantic": 1.0,
+        "groundedness_like": 1.0
+      },
+      "multi_concept": {
+        "count": 5,
+        "recall_semantic": 0.8333,
+        "recall_like": 0.7333,
+        "mrr_semantic": 0.84,
+        "mrr_like": 0.9,
+        "groundedness_semantic": 0.681,
+        "groundedness_like": 0.781
+      },
+      "paraphrase": {
+        "count": 5,
+        "recall_semantic": 1.0,
+        "recall_like": 0.6,
+        "mrr_semantic": 0.7667,
+        "mrr_like": 0.44,
+        "groundedness_semantic": 0.8333,
+        "groundedness_like": 0.6667
+      },
+      "synonym": {
+        "count": 5,
+        "recall_semantic": 0.8333,
+        "recall_like": 0.7,
+        "mrr_semantic": 1.0,
+        "mrr_like": 0.7,
+        "groundedness_semantic": 0.9333,
+        "groundedness_like": 0.7667
+      }
+    }
+  }
+}
