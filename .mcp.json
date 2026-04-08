@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "bear-notes": {
+      "command": "uv",
+      "args": [
+        "run",
+        "bear-rag-mcp"
+      ]
+    }
+  }
+}
