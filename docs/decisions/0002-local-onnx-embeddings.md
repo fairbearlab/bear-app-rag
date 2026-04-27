@@ -18,7 +18,7 @@ Bear notes are personal. Users store journal entries, health notes, financial pl
 
 Use ChromaDB's built-in `DefaultEmbeddingFunction` which runs all-MiniLM-L6-v2 via ONNX Runtime locally. No embedding data leaves the machine.
 
-**Privacy audit results (Phase 4):** ChromaDB includes opt-out telemetry (`ANONYMIZED_TELEMETRY` env var). We disable it at import time in `config.py:os.environ.setdefault`. ONNX Runtime makes no network calls during inference. The only network call is the one-time ~90MB model download on first use, which fetches from Hugging Face.
+**Privacy audit results (Phase 4):** ChromaDB includes opt-out telemetry (`ANONYMIZED_TELEMETRY` env var). We disable it at import time in `config.py:os.environ.setdefault`. ONNX Runtime makes no network calls during inference. The only network call is the one-time ~90MB model download on first use, fetched from ChromaDB's S3 bucket (`chroma-onnx-models.s3.amazonaws.com`).
 
 The embedding model (all-MiniLM-L6-v2) is pinned via explicit `DefaultEmbeddingFunction()` in `store.py` to ensure reproducibility across ChromaDB versions.
 

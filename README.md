@@ -4,8 +4,6 @@ Local-first semantic search for [Bear](https://bear.app) notes. Indexes your not
 
 4 direct dependencies. Zero frameworks. [Provable benchmarks](#benchmark-results).
 
-<!-- TODO: Add terminal recording GIF here after Step 6b -->
-
 ## Why This Exists
 
 Bear has no API. Your notes are locked in a SQLite database. Existing Bear integrations pass entire notes to AI, which breaks past ~50 notes. bear-app-rag chunks your notes, embeds them locally, and retrieves the most relevant chunks via semantic search.
@@ -165,7 +163,7 @@ All constants live in `bear_rag/config.py`:
 
 ```shell
 uv sync --all-extras       # Install dev dependencies
-uv run pytest -v           # Run tests (131 unit tests)
+uv run pytest -v           # Run tests (139 unit tests)
 uv run pytest -m eval -v   # Run eval suite (27 eval tests)
 uv run bear-rag demo       # Run self-contained benchmark demo
 ```

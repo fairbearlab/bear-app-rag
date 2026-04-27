@@ -41,7 +41,7 @@ Check [docs/decisions/](docs/decisions/) for ADRs explaining why things are the 
 ## Running Tests
 
 ```shell
-uv run pytest -v              # Unit tests (131 tests)
+uv run pytest -v              # Unit tests (139 tests)
 uv run pytest -m eval -v      # Eval suite (27 tests)
 uv run pytest -v -m ""        # All tests
 ```

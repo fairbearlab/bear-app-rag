@@ -139,7 +139,7 @@ DEMO_CORPUS: list[dict] = [
 
 DEMO_QUERIES: list[dict] = [
     {
-        "query": "What are some techniques for maintaining concentration?",
+        "query": "How do I avoid scattered attention while working?",
         "type": "synonym",
         "expected_note_pks": [3],
     },
@@ -201,6 +201,19 @@ def _keyword_retrieve(db: sqlite3.Connection, query: str, k: int = 5) -> list[in
 
     ranked = sorted(hit_counts.keys(), key=lambda pk: (-hit_counts[pk], pk))
     return ranked[:k]
+
+
+def _reciprocal_rank(retrieved_pks: list[int], expected_pks: set[int]) -> float:
+    """Reciprocal rank of the first expected pk in the retrieved list.
+
+    Returns 1/rank (1-indexed) for the first hit, or 0.0 if no expected pk
+    appears. This is the per-query component of MRR — the same metric the
+    eval suite uses, so the demo's headline tracks the published numbers.
+    """
+    for rank, pk in enumerate(retrieved_pks, 1):
+        if pk in expected_pks:
+            return 1.0 / rank
+    return 0.0
 
 
 def _keyword_titles(db: sqlite3.Connection, pks: list[int]) -> list[str]:
@@ -303,18 +316,19 @@ def run_demo() -> None:
             kw_elapsed_ms = (time.perf_counter() - t0) * 1000
             kw_titles = _keyword_titles(db, kw_pks)
 
-            # Determine winner by how many expected notes were found
-            sem_hits = len(expected_pks & set(sem_pks))
-            kw_hits = len(expected_pks & set(kw_pks))
+            # Score by MRR (Mean Reciprocal Rank): rank of the first expected
+            # hit, 0 if not found. Matches the metric used in tests/eval/eval_harness.py.
+            sem_mrr = _reciprocal_rank(sem_pks, expected_pks)
+            kw_mrr = _reciprocal_rank(kw_pks, expected_pks)
 
-            if sem_hits > kw_hits:
-                winner = f"Semantic (+{sem_hits - kw_hits} relevant)"
+            if sem_mrr > kw_mrr:
+                winner = f"Semantic (MRR {sem_mrr:.2f} vs {kw_mrr:.2f})"
                 semantic_wins += 1
-            elif kw_hits > sem_hits:
-                winner = f"Keyword (+{kw_hits - sem_hits} relevant)"
+            elif kw_mrr > sem_mrr:
+                winner = f"Keyword (MRR {kw_mrr:.2f} vs {sem_mrr:.2f})"
                 keyword_wins += 1
             else:
-                winner = "Tie"
+                winner = f"Tie (MRR {sem_mrr:.2f})"
                 ties += 1
 
             # Format output
