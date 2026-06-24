@@ -1,10 +1,14 @@
 from pathlib import Path
 
-import chromadb
-from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
-
+# Import config before chromadb so ANONYMIZED_TELEMETRY is set in the
+# environment before chromadb reads it (e.g. when NoteStore is imported
+# directly, without going through demo.py / cli.py first).
 from bear_rag import config
-from bear_rag.models import Chunk, ChunkMetadata
+
+import chromadb  # noqa: E402 — must follow config import (see above)
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction  # noqa: E402
+
+from bear_rag.models import Chunk, ChunkMetadata  # noqa: E402
 
 _COLLECTION_NAME = "bear_notes"
 

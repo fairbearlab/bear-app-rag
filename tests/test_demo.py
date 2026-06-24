@@ -14,8 +14,14 @@ from bear_rag.demo import DEMO_CORPUS, run_demo
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.eval
 def test_run_demo_happy_path(capsys):
-    """run_demo() should complete and print the summary line."""
+    """run_demo() should complete and print the summary line.
+
+    Marked ``eval`` because it runs the real embedding path, which downloads
+    the ~90MB ONNX model on a cold cache. Deselected from default CI via the
+    ``-m 'not eval'`` addopts; run explicitly with ``pytest -m eval``.
+    """
     run_demo()
 
     captured = capsys.readouterr()
@@ -143,8 +149,19 @@ def test_corpus_has_five_entries_with_required_keys():
 # ---------------------------------------------------------------------------
 
 
-def test_telemetry_disabled():
-    """Importing bear_rag.config should set ANONYMIZED_TELEMETRY to 'False'."""
-    import bear_rag.config  # noqa: F401
+def test_telemetry_disabled(monkeypatch):
+    """Importing bear_rag.config should set ANONYMIZED_TELEMETRY to 'False'.
+
+    config.py uses ``os.environ.setdefault``, so the assertion is only
+    meaningful when the var is unset and the module is freshly imported.
+    Clear the var and reload to make this deterministic regardless of the
+    ambient environment or prior imports in the session.
+    """
+    import importlib
+
+    import bear_rag.config
+
+    monkeypatch.delenv("ANONYMIZED_TELEMETRY", raising=False)
+    importlib.reload(bear_rag.config)
 
     assert os.environ.get("ANONYMIZED_TELEMETRY") == "False"

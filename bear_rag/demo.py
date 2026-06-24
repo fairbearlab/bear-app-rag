@@ -246,10 +246,11 @@ def run_demo() -> None:
         # -- Index corpus into NoteStore --
         try:
             store = NoteStore(persist_dir=persist_dir)
-        except Exception:
+        except Exception as exc:
             print(
                 "Embedding model not yet cached. "
-                "Run with internet access first (~90MB download, one-time)."
+                "Run with internet access first (~90MB download, one-time).\n"
+                f"  (original error: {exc})"
             )
             return
 

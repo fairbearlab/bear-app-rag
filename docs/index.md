@@ -8,9 +8,9 @@ Local-first semantic search for [Bear](https://bear.app) notes. 4 direct depende
 
 ## Documentation
 
-- **[Architecture](ARCHITECTURE.md)** -- How the pipeline works, module by module
-- **[Building a Production RAG Pipeline Without LangChain](BUILDING.md)** -- The full technical essay
-- **[Evaluation Methodology](EVALUATION.md)** -- How we prove RAG beats keyword search
+- **[Architecture](ARCHITECTURE.html)** -- How the pipeline works, module by module
+- **[Building a Production RAG Pipeline Without LangChain](BUILDING.html)** -- The full technical essay
+- **[Evaluation Methodology](EVALUATION.html)** -- How we prove RAG beats keyword search
 - **[Benchmark Visualization](benchmarks/)** -- SVG charts of the eval results
 - **[Architecture Decision Records](decisions/)** -- 7 ADRs documenting key design choices
 

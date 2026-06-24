@@ -62,13 +62,13 @@ def _bar_chart_svg(
 
         lines.append(f'<rect x="{chart_left}" y="{y}" width="{rag_w:.1f}" height="{bar_height}" '
                       f'rx="3" class="bar-rag"/>')
-        lines.append(f'<text x="{chart_left + rag_w + 6}" y="{y + bar_height - 8}" '
+        lines.append(f'<text x="{chart_left + rag_w + 6:.1f}" y="{y + bar_height - 8}" '
                       f'class="value">{rag_values[i]:.2f}</text>')
 
         like_y = y + bar_height + gap
         lines.append(f'<rect x="{chart_left}" y="{like_y}" width="{like_w:.1f}" height="{bar_height}" '
                       f'rx="3" class="bar-like"/>')
-        lines.append(f'<text x="{chart_left + like_w + 6}" y="{like_y + bar_height - 8}" '
+        lines.append(f'<text x="{chart_left + like_w + 6:.1f}" y="{like_y + bar_height - 8}" '
                       f'class="value">{like_values[i]:.2f}</text>')
 
     # Legend
