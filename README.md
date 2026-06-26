@@ -133,7 +133,7 @@ bear-rag demo               # Self-contained benchmark demo (no Bear DB required
 | `generator.py` | Prompt construction and Claude API calls |
 | `sync.py` | Incremental sync with timestamp-based change detection |
 | `cli.py` | argparse entry point with subcommands |
-| `mcp_server.py` | MCP server exposing search, read, list, sync, status |
+| `mcp_server.py` | MCP server exposing 6 tools: search, read, list, tags, sync, status |
 | `demo.py` | Self-contained benchmark demo with inline corpus |
 | `config.py` | Constants, embedding model pin, telemetry disable |
 
