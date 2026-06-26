@@ -190,7 +190,7 @@ def llm_judge_groundedness(
         client = anthropic.Anthropic()
         chunk_text = "\n\n---\n\n".join(c.text for c in chunks)
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-6",
             max_tokens=256,
             messages=[
                 {
