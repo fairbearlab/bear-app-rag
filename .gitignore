@@ -6,3 +6,4 @@ dist/
 .env
 .bear-rag/
 backlog/
+.DS_Store
