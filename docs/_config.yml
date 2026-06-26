@@ -2,5 +2,3 @@ title: bear-app-rag
 description: Local-first semantic search for Bear notes
 theme: minima
 markdown: kramdown
-exclude:
-  - superpowers

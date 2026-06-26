@@ -81,6 +81,8 @@ For RAG, "retrieved text" is the chunk text. For LIKE, it's the full note text o
 
 Claude scores (0.0-1.0) whether retrieved chunks contain enough information to answer the query. Requires `ANTHROPIC_API_KEY` and `EVAL_LLM_JUDGE=1` env var.
 
+The LLM judge is available but **not part of the committed benchmark**. It needs an API key, so it is opt-in and its scores are not deterministic or checked into `results.json`. The deterministic keyword groundedness above is the source of truth for every number quoted in the README and the writeups; no LLM-judge figures are committed anywhere in this repo.
+
 ## Running the Eval
 
 Default (no API key required):

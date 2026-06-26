@@ -102,7 +102,7 @@ class NoteStore:
         )
 ```
 
-The privacy guarantee: your notes never leave the machine during indexing or querying. The only network call is that initial model download. We disable ChromaDB's telemetry at import time.
+The privacy guarantee: your notes never leave the machine during indexing, embedding, or search. The only network call on that path is that initial model download, and we disable ChromaDB's telemetry at import time. Two paths are opt-in and do send note content off the machine: `bear-rag ask` posts retrieved chunks to the Anthropic API when `ANTHROPIC_API_KEY` is set (Step 4 below), and the MCP server hands retrieved chunks to the connected agent.
 
 The model produces 384-dimensional vectors. Cloud embedding APIs (OpenAI's text-embedding-3-small) produce 1536 dimensions. At personal-note scale, the quality difference doesn't matter. The privacy guarantee does.
 
@@ -111,6 +111,17 @@ See `store.py:NoteStore` and [ADR-0002](decisions/0002-local-onnx-embeddings.md)
 ### Step 4: Making It Useful (MCP Server)
 
 The CLI exists for admin tasks. The real interface is the MCP server: 6 tools that AI agents call during conversation.
+
+| Tool | Purpose |
+|------|---------|
+| `search_notes` | Semantic search across all indexed notes |
+| `read_note` | Read a specific note by title |
+| `list_notes` | Browse notes with tag/date/title filters |
+| `list_tags` | Show all tags with note counts |
+| `sync_notes` | Trigger incremental sync from Bear |
+| `status` | Show index stats and last sync time |
+
+`search_notes` is the one worth showing in full, because its description doubles as UX copy for the agent:
 
 ```python
 mcp = FastMCP("bear-notes")
@@ -133,7 +144,7 @@ See `mcp_server.py` and [ADR-0004](decisions/0004-mcp-as-primary-interface.md).
 
 The baseline is fair. We gave keyword search its best shot: split the query into words, LIKE-match each word against title and body, rank results by hit count. This is what a keyword-based Bear MCP server would do.
 
-**The results:**
+**The results.** Three metrics, all higher = better: **Recall@5** is the fraction of expected notes that appear in the top 5 results; **MRR** captures how high the first correct note ranks (1.0 = always first); **Groundedness** is the fraction of expected keywords present in the retrieved text. Full definitions are in [EVALUATION.md](EVALUATION.md).
 
 | Metric | RAG | Keyword (LIKE) |
 |--------|-----|----------------|
@@ -143,18 +154,20 @@ The baseline is fair. We gave keyword search its best shot: split the query into
 
 The aggregate numbers are interesting. The per-query-type breakdown is where the story gets compelling:
 
-| Query Type | Recall RAG | Recall LIKE | Delta |
-|------------|------------|-------------|-------|
-| exact_match | 1.00 | 1.00 | 0% |
-| synonym | 0.83 | 0.70 | +13% |
-| paraphrase | 1.00 | 0.60 | +40% |
-| multi_concept | 0.83 | 0.73 | +10% |
+| Query Type | Count | Recall RAG | Recall LIKE | MRR RAG | MRR LIKE |
+|------------|-------|------------|-------------|---------|----------|
+| exact_match | 5 | 1.00 | 1.00 | 1.00 | 1.00 |
+| multi_concept | 5 | 0.83 | 0.73 | 0.84 | 0.90 |
+| paraphrase | 5 | 1.00 | 0.60 | 0.77 | 0.44 |
+| synonym | 5 | 0.83 | 0.70 | 1.00 | 0.70 |
 
 On exact-match queries (the control group), both methods tie at 1.00. This confirms the baseline is fair.
 
 On paraphrase queries, RAG beats keyword matching by 40%. When you search for "What makes products easy to use without reading instructions?" and the relevant note discusses "affordances" and "signifiers," keyword search has no chance. Embeddings understand that these concepts are related.
 
-The eval uses no frameworks. No RAGAS, no DeepEval, no LangSmith. Just pytest, JSON fixtures, and arithmetic. The eval code itself is portfolio signal.
+RAG does not win everywhere, and the table shows it. On multi_concept, RAG retrieves more of the expected notes (recall 0.83 vs 0.73) but the keyword baseline ranks its first hit higher (MRR 0.90 vs 0.84). The gap traces to one query — "weekend projects combining outdoor activity with food" — where RAG's first relevant hit lands at rank 5 and LIKE's at rank 2; the other four multi_concept queries tie at MRR 1.00. The win is on recall, not on first-hit rank.
+
+The eval uses no frameworks. No RAGAS, no DeepEval, no LangSmith. Just pytest, JSON fixtures, and arithmetic.
 
 See `tests/eval/eval_harness.py` and [ADR-0006](decisions/0006-hand-rolled-eval-framework.md).
 

@@ -18,11 +18,11 @@ We evaluated LangChain for the Bear notes pipeline and found a mismatch between 
 
 Build the RAG pipeline with direct library calls (chromadb, anthropic) instead of LangChain or any orchestration framework.
 
-The entire pipeline is four operations: read SQLite, chunk text, embed into vectors, query them. That's four libraries, not a framework.
+The entire pipeline is four operations: read SQLite, chunk text, embed into vectors, query them. For a pipeline this small, that's four libraries, not a framework.
 
 ## Alternatives Considered
 
-**LangChain:** The obvious choice. Provides document loaders, text splitters, vector store wrappers, and chain abstractions. But it adds 50+ transitive dependencies, wraps every library in an abstraction layer, and makes debugging a six-layer stack trace exercise. When ChromaDB ships a breaking change, you're waiting on LangChain to update their wrapper.
+**LangChain:** The obvious choice. Provides document loaders, text splitters, vector store wrappers, and chain abstractions. But it pulls in a large transitive dependency tree, wraps every library in an abstraction layer, and — for a pipeline this small — tends to turn debugging into a multi-layer stack-trace exercise where the underlying library just needed a different parameter. When ChromaDB ships a breaking change, you're waiting on LangChain to update their wrapper.
 
 **LlamaIndex:** Similar scope to LangChain with a data-focused orientation. Same dependency and abstraction concerns.
 
@@ -34,7 +34,7 @@ The entire pipeline is four operations: read SQLite, chunk text, embed into vect
 - 4 direct dependencies total (anthropic, chromadb, mcp, python-dotenv)
 - Every line of the pipeline is debuggable without framework internals
 - No version coupling between the framework and its underlying libraries
-- The minimal dependency count is portfolio signal: it shows you can build without scaffolding
+- The small dependency count keeps the whole pipeline auditable in an afternoon
 
 ### Negative
 - No pre-built document loaders (we wrote `bear_reader.py`, ~80 lines)

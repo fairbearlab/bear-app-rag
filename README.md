@@ -12,28 +12,18 @@ Bear has no API. Your notes are locked in a SQLite database. Existing Bear integ
 
 ## Quickstart (5 minutes)
 
-**Prerequisites:** macOS, Python 3.11+, [Bear](https://bear.app) installed with some notes.
+**Prerequisites:** macOS, Python 3.11+, [Bear](https://bear.app) installed with some notes. The `pip` quickstart below needs nothing more; for local development, the MCP server, or the cron auto-sync you'll also want [uv](https://astral.sh/uv).
 
 ```shell
 pip install git+https://github.com/fairbearlab/bear-app-rag.git
 bear-rag index
-bear-rag ask "What did I write about..."
 ```
 
 First index takes ~30s extra to download the embedding model (~90MB, one-time). Subsequent runs are instant.
 
-**For development:**
+### MCP Server
 
-```shell
-git clone https://github.com/fairbearlab/bear-app-rag.git
-cd bear-app-rag
-uv sync
-uv run bear-rag index
-```
-
-### MCP Server (Claude Code)
-
-Add to `.mcp.json`:
+The MCP server is the primary interface: it lets an AI agent like Claude Code search your notes directly during a conversation, instead of you running CLI commands by hand. Add to `.mcp.json`:
 
 ```json
 {
@@ -62,13 +52,15 @@ Bear SQLite DB ──→ BearReader ──→ Chunker ──→ NoteStore (Chrom
                     timestamps)      aware split)   local vector store)    list, sync)
 ```
 
-Your notes never leave the machine. Embeddings are computed locally via ONNX Runtime. The only network call is the one-time model download.
+Indexing, embedding, and search are fully local: your notes are read, chunked, and embedded on-device via ONNX Runtime, and the only network call on that path is the one-time model download. Two paths are opt-in and do leave the machine: `bear-rag ask` sends the retrieved chunk text to the Anthropic API to generate an answer (only when `ANTHROPIC_API_KEY` is set), and the MCP server hands retrieved chunks to whatever agent is connected. See [ADR-0002](docs/decisions/0002-local-onnx-embeddings.md) for the full privacy audit.
 
 [Read the full architecture tour.](docs/ARCHITECTURE.md)
 
 ## Benchmark Results
 
 RAG vs keyword (SQLite LIKE) retrieval on a 25-note synthetic corpus with 20 eval queries across four query types. Results from `tests/eval/results.json`.
+
+Three metrics, all higher = better: **Recall@5** is the fraction of expected notes that appear in the top 5 results; **MRR** captures how high the first correct note ranks (1.0 = always first); **Groundedness** is the fraction of expected keywords present in the retrieved text. Full definitions are in [EVALUATION.md](docs/EVALUATION.md).
 
 ### Aggregate Metrics
 
@@ -87,7 +79,7 @@ RAG vs keyword (SQLite LIKE) retrieval on a 25-note synthetic corpus with 20 eva
 | paraphrase | 5 | 1.00 | 0.60 | 0.77 | 0.44 |
 | synonym | 5 | 0.83 | 0.70 | 1.00 | 0.70 |
 
-RAG wins on paraphrase (+40% recall, +33% MRR) and synonym (+13% recall, +30% MRR) queries. On exact-match queries (the control group), both methods tie at 1.00, confirming the baseline is fair.
+RAG wins on paraphrase (+40% recall, +33% MRR) and synonym (+13% recall, +30% MRR) queries. On exact-match queries (the control group), both methods tie at 1.00, confirming the baseline is fair. The honest exception is multi_concept: RAG retrieves more of the expected notes (recall 0.83 vs 0.73) but the keyword baseline ranks its first hit higher (MRR 0.90 vs 0.84). That gap is driven by a single query ("weekend projects combining outdoor activity with food"), where RAG's first relevant hit lands at rank 5 and LIKE's at rank 2; the other four multi_concept queries tie at MRR 1.00. RAG does not win on every query type, and the table is the honest picture.
 
 ### Side-by-Side Examples
 
@@ -162,7 +154,10 @@ All constants live in `bear_rag/config.py`:
 ## Development
 
 ```shell
-uv sync --all-extras       # Install dev dependencies
+git clone https://github.com/fairbearlab/bear-app-rag.git
+cd bear-app-rag
+uv sync --all-extras       # Install with dev dependencies
+uv run bear-rag index      # Build the index
 uv run pytest -v           # Run tests (139 unit tests)
 uv run pytest -m eval -v   # Run eval suite (27 eval tests)
 uv run bear-rag demo       # Run self-contained benchmark demo

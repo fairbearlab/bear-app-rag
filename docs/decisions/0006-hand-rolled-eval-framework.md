@@ -43,7 +43,7 @@ The eval uses 20 queries across 4 types: exact_match (control group), synonym, p
 ### Positive
 - Zero eval dependencies beyond pytest (already a dev dependency)
 - Deterministic by default: keyword_groundedness runs without any API key
-- The eval code itself is portfolio signal: it shows you can design metrics from scratch
+- The metrics are defined in-repo, so anyone can read exactly how a score is computed
 - Query type breakdown provides narrative depth that aggregate scores can't
 - Results committed as `results.json` artifact, README numbers always traceable
 

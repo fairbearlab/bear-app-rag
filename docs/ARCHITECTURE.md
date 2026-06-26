@@ -42,11 +42,13 @@ See [ADR-0003](decisions/0003-chunk-sizing-strategy.md) for the sizing rationale
 
 ## Embeddings: Local-First, No Cloud Required
 
-`store.py:NoteStore` wraps ChromaDB with an explicitly pinned `DefaultEmbeddingFunction` (all-MiniLM-L6-v2 via ONNX Runtime). Every embedding is computed on-device. No API calls, no cloud vector DB, no data exfiltration.
+`store.py:NoteStore` wraps ChromaDB with an explicitly pinned `DefaultEmbeddingFunction` (all-MiniLM-L6-v2 via ONNX Runtime). Every embedding is computed on-device. Indexing, embedding, and search never call a cloud service or a hosted vector DB.
 
 The model produces 384-dimensional vectors. It's smaller than cloud alternatives (OpenAI's text-embedding-3-small produces 1536 dimensions), but at personal-note scale the quality difference doesn't matter, and the privacy guarantee does.
 
-ChromaDB's telemetry is disabled at import time via `config.py:os.environ.setdefault('ANONYMIZED_TELEMETRY', 'False')`. ONNX Runtime makes no network calls during inference. The only network call in the entire pipeline is the one-time ~90MB model download on first use.
+ChromaDB's telemetry is disabled at import time via `config.py:os.environ.setdefault('ANONYMIZED_TELEMETRY', 'False')`. ONNX Runtime makes no network calls during inference. On the indexing/embedding/search path the only network call is the one-time ~90MB model download on first use.
+
+The scope of that guarantee is the local retrieval path. Two paths are opt-in and do send note content off the machine: `generator.py` (the `bear-rag ask` command) sends retrieved chunk text to the Anthropic API to draft an answer, but only when `ANTHROPIC_API_KEY` is set; and the MCP server returns retrieved chunks to the connected agent, which is a deliberate trust boundary. Neither is exercised by `index`, `sync`, or `status`.
 
 See [ADR-0002](decisions/0002-local-onnx-embeddings.md) for the full privacy audit.
 
@@ -99,7 +101,7 @@ See [ADR-0005](decisions/0005-incremental-sync-via-timestamps.md) for the timest
 
 `tests/eval/eval_harness.py` implements a dual-retriever benchmark comparing semantic search (ChromaDB) against keyword search (SQLite LIKE) on a 25-note synthetic corpus.
 
-The eval doesn't use RAGAS, DeepEval, or any eval framework. It's pytest, JSON fixtures, and arithmetic. The metrics (recall@K, MRR, keyword groundedness) are hand-rolled with parametrized unit tests. The eval code itself is portfolio signal.
+The eval doesn't use RAGAS, DeepEval, or any eval framework. It's pytest, JSON fixtures, and arithmetic. The metrics (recall@K, MRR, keyword groundedness) are hand-rolled with parametrized unit tests.
 
 Results: semantic search beats keyword matching by +40% recall on paraphrase queries and +13% on synonym queries. On exact-match queries (the control group), both methods tie at 1.00.
 
