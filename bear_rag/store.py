@@ -1,9 +1,14 @@
 from pathlib import Path
 
-import chromadb
-
+# Import config before chromadb so ANONYMIZED_TELEMETRY is set in the
+# environment before chromadb reads it (e.g. when NoteStore is imported
+# directly, without going through demo.py / cli.py first).
 from bear_rag import config
-from bear_rag.models import Chunk, ChunkMetadata
+
+import chromadb  # noqa: E402 — must follow config import (see above)
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction  # noqa: E402
+
+from bear_rag.models import Chunk, ChunkMetadata  # noqa: E402
 
 _COLLECTION_NAME = "bear_notes"
 
@@ -12,7 +17,10 @@ class NoteStore:
     def __init__(self, persist_dir: Path = config.CHROMA_DIR) -> None:
         persist_dir.mkdir(parents=True, exist_ok=True)
         self._client = chromadb.PersistentClient(path=str(persist_dir))
-        self._collection = self._client.get_or_create_collection(name=_COLLECTION_NAME)
+        self._collection = self._client.get_or_create_collection(
+            name=_COLLECTION_NAME,
+            embedding_function=DefaultEmbeddingFunction(),
+        )
 
     # ------------------------------------------------------------------
     # Write operations
@@ -37,7 +45,10 @@ class NoteStore:
     def reset(self) -> None:
         """Delete and recreate the collection, clearing all data."""
         self._client.delete_collection(name=_COLLECTION_NAME)
-        self._collection = self._client.create_collection(name=_COLLECTION_NAME)
+        self._collection = self._client.create_collection(
+            name=_COLLECTION_NAME,
+            embedding_function=DefaultEmbeddingFunction(),
+        )
 
     # ------------------------------------------------------------------
     # Read operations

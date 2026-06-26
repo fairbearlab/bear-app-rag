@@ -123,7 +123,17 @@ def main():
     # status subcommand
     subparsers.add_parser("status", help="Show index statistics.")
 
+    # demo subcommand
+    subparsers.add_parser("demo", help="Run a self-contained benchmark demo (no Bear database required).")
+
     args = parser.parse_args()
+
+    # Demo creates its own temp store — handle before NoteStore/BearReader init.
+    if args.command == "demo":
+        from bear_rag.demo import run_demo
+
+        run_demo()
+        return
 
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
 
