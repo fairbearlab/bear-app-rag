@@ -2,6 +2,12 @@
 
 All notable changes to bear-rag will be documented in this file.
 
+## [0.2.1] - 2026-06-26
+
+### Fixed
+
+- Bumped `CLAUDE_MODEL` off the retired `claude-sonnet-4-20250514` snapshot (retired 2026-06-15) to the undated `claude-sonnet-4-6` alias, so the `bear-rag ask` / LLM-judge path keeps working and won't 404 after a future snapshot retirement. Also fixed the same hardcoded snapshot in `tests/eval/eval_harness.py`.
+
 ## [0.2.0] - 2026-04-07
 
 ### Added
