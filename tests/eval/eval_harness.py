@@ -333,7 +333,9 @@ def _aggregate(query_results: list[dict]) -> dict:
         # Require *every* item to carry them (not just items[0]) so heterogeneous
         # judge data — e.g. a query added while EVAL_LLM_JUDGE was off — degrades
         # gracefully instead of raising KeyError inside _avg.
-        if items and all("llm_judge_semantic" in i for i in items):
+        if items and all(
+            "llm_judge_semantic" in i and "llm_judge_like" in i for i in items
+        ):
             metrics["llm_judge_semantic"] = round(_avg(items, "llm_judge_semantic"), 4)
             metrics["llm_judge_like"] = round(_avg(items, "llm_judge_like"), 4)
         return metrics
