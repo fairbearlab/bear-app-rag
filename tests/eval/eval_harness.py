@@ -7,7 +7,9 @@ report renderer that produces markdown tables and side-by-side examples.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import math
 import os
 import re
 import sqlite3
@@ -226,13 +228,24 @@ def llm_judge_text(query: str, retrieved_text: str, answer_context: str) -> floa
     except Exception as e:  # network / auth / rate-limit / SDK error
         raise LLMJudgeError(f"LLM judge API call failed: {e}") from e
 
-    score_text = response.content[0].text.strip()
+    try:
+        score_text = response.content[0].text.strip()
+    except (IndexError, AttributeError, TypeError) as e:
+        raise LLMJudgeError(
+            f"LLM judge returned an unexpected response shape: {e}"
+        ) from e
     try:
         score = float(score_text)
     except ValueError as e:
         raise LLMJudgeError(
             f"LLM judge returned a non-numeric score: {score_text!r}"
         ) from e
+    # float() accepts "nan"/"inf"; those would clamp to a fake 1.0 and quietly
+    # defeat fail-closed, so reject any non-finite reply outright.
+    if not math.isfinite(score):
+        raise LLMJudgeError(
+            f"LLM judge returned a non-finite score: {score_text!r}"
+        )
     return max(0.0, min(1.0, score))
 
 
@@ -252,6 +265,17 @@ def llm_judge_groundedness(
 # ------------------------------------------------------------------
 # Eval runner
 # ------------------------------------------------------------------
+
+
+def text_fingerprint(text: str) -> str:
+    """Stable content hash of judged text, for carry-forward staleness checks.
+
+    The LLM judge scores joined *text*, so the committed judge score is only
+    valid while that text is unchanged. Fingerprinting the text (not just the
+    retrieved PK list) catches re-chunking or note-body edits that leave the PKs
+    identical but change what the judge actually saw.
+    """
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def run_eval(
@@ -283,6 +307,10 @@ def run_eval(
             "like_pks": like_pks,
             "semantic_titles": [corpus.get_title(pk) for pk in sem_pks],
             "like_titles": [corpus.get_title(pk) for pk in like_pks],
+            # Content fingerprints of the exact text the judge scores, so
+            # carry-forward can detect text drift even when PKs are unchanged.
+            "semantic_text_sha": text_fingerprint(sem_text),
+            "like_text_sha": text_fingerprint(like_text),
             "recall_semantic": recall_at_k(sem_pks, q["expected_note_pks"], k),
             "recall_like": recall_at_k(like_pks, q["expected_note_pks"], k),
             "mrr_semantic": mrr(sem_pks, q["expected_note_pks"]),
