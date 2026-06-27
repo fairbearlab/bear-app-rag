@@ -1,6 +1,6 @@
 [project]
 name = "bear-rag"
-version = "0.3.0"
+version = "0.3.1"
 description = "Local-first RAG pipeline for Bear notes with ONNX embeddings and MCP server"
 readme = "README.md"
 license = "MIT"
@@ -40,3 +40,8 @@ addopts = "-m 'not eval'"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest-socket>=0.8.0",
+]
