@@ -11,11 +11,11 @@ import json
 import os
 import re
 import sqlite3
-import warnings
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
+from bear_rag import config
 from bear_rag.chunker import chunk_note
 from bear_rag.models import BearNote, Chunk
 from bear_rag.store import NoteStore
@@ -174,12 +174,27 @@ def keyword_groundedness(text: str, expected_keywords: list[str]) -> float:
     return found / len(expected_keywords)
 
 
-def llm_judge_groundedness(
-    query: str, chunks: list[Chunk], answer_context: str
-) -> float:
-    """Score (0.0-1.0) whether chunks contain enough info to answer the query.
+class LLMJudgeError(RuntimeError):
+    """Raised when the LLM judge cannot produce a valid score.
 
-    Requires ANTHROPIC_API_KEY. Returns 0.0 with a warning on API errors.
+    The judge fails *closed*: an API error or an unparseable (non-numeric) model
+    reply raises instead of silently returning 0.0. A committed benchmark number
+    must reflect a real judgment, so a broken run aborts rather than writing a
+    fake score into results.json / BENCHMARK.md.
+    """
+
+
+def llm_judge_text(query: str, retrieved_text: str, answer_context: str) -> float:
+    """Score (0.0-1.0) whether *retrieved_text* supports answering *query*.
+
+    The retrieval-method-agnostic core of the LLM judge: it takes already-joined
+    text, so it scores RAG chunk text and keyword note text on the same footing.
+    Uses the same model as the rest of the project (``config.CLAUDE_MODEL``, an
+    undated alias) so it keeps resolving after snapshot retirements.
+
+    Requires ANTHROPIC_API_KEY. Fails closed: raises :class:`LLMJudgeError` on an
+    API error or a non-numeric model reply (e.g. ``"0.72 because..."``) rather
+    than masquerading the failure as a real 0.0 score.
     """
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise EnvironmentError("ANTHROPIC_API_KEY required for LLM judge")
@@ -188,32 +203,50 @@ def llm_judge_groundedness(
         import anthropic
 
         client = anthropic.Anthropic()
-        chunk_text = "\n\n---\n\n".join(c.text for c in chunks)
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model=config.CLAUDE_MODEL,
             max_tokens=256,
             messages=[
                 {
                     "role": "user",
                     "content": (
                         "You are evaluating retrieval quality. Given the following "
-                        "retrieved text chunks and a query, score how well the chunks "
-                        "support answering the query.\n\n"
+                        "retrieved text and a query, score how well the text "
+                        "supports answering the query.\n\n"
                         f"**Query:** {query}\n\n"
                         f"**Expected answer context:** {answer_context}\n\n"
-                        f"**Retrieved chunks:**\n{chunk_text}\n\n"
+                        f"**Retrieved text:**\n{retrieved_text}\n\n"
                         "Respond with ONLY a decimal number between 0.0 and 1.0, "
-                        "where 1.0 means the chunks fully support the answer and "
-                        "0.0 means they contain nothing relevant."
+                        "where 1.0 means the text fully supports the answer and "
+                        "0.0 means it contains nothing relevant."
                     ),
                 }
             ],
         )
-        score_text = response.content[0].text.strip()
-        return max(0.0, min(1.0, float(score_text)))
-    except Exception as e:
-        warnings.warn(f"LLM judge failed: {e}")
-        return 0.0
+    except Exception as e:  # network / auth / rate-limit / SDK error
+        raise LLMJudgeError(f"LLM judge API call failed: {e}") from e
+
+    score_text = response.content[0].text.strip()
+    try:
+        score = float(score_text)
+    except ValueError as e:
+        raise LLMJudgeError(
+            f"LLM judge returned a non-numeric score: {score_text!r}"
+        ) from e
+    return max(0.0, min(1.0, score))
+
+
+def llm_judge_groundedness(
+    query: str, chunks: list[Chunk], answer_context: str
+) -> float:
+    """Convenience wrapper: judge a list of *chunks* by joining their text.
+
+    ``run_eval`` scores the committed RAG/LIKE columns via ``llm_judge_text`` on
+    space-joined text (symmetric across both retrieval paths); this helper exists
+    for callers that hold ``Chunk`` objects rather than pre-joined text.
+    """
+    chunk_text = "\n\n---\n\n".join(c.text for c in chunks)
+    return llm_judge_text(query, chunk_text, answer_context)
 
 
 # ------------------------------------------------------------------
@@ -221,8 +254,15 @@ def llm_judge_groundedness(
 # ------------------------------------------------------------------
 
 
-def run_eval(corpus: EvalCorpus, queries: list[dict], k: int = 5) -> dict:
-    """Run full eval: both retrievers, all metrics, per-query and aggregated."""
+def run_eval(
+    corpus: EvalCorpus, queries: list[dict], k: int = 5, judge: bool = False
+) -> dict:
+    """Run full eval: both retrievers, all metrics, per-query and aggregated.
+
+    When *judge* is True, also runs the (non-deterministic, API-backed) LLM judge
+    on both retrieval paths and records ``llm_judge_semantic`` / ``llm_judge_like``
+    per query. Requires ANTHROPIC_API_KEY.
+    """
     query_results = []
 
     for q in queries:
@@ -254,6 +294,15 @@ def run_eval(corpus: EvalCorpus, queries: list[dict], k: int = 5) -> dict:
                 like_text, q["expected_keywords"]
             ),
         }
+        if judge:
+            # Judge both retrieval paths on the same footing so the column is
+            # comparable to every other RAG-vs-keyword metric.
+            result["llm_judge_semantic"] = llm_judge_text(
+                q["query"], sem_text, q["answer_context"]
+            )
+            result["llm_judge_like"] = llm_judge_text(
+                q["query"], like_text, q["answer_context"]
+            )
         query_results.append(result)
 
     # Aggregate metrics
@@ -271,7 +320,7 @@ def _aggregate(query_results: list[dict]) -> dict:
         return sum(vals) / len(vals) if vals else 0.0
 
     def _metrics_for(items: list[dict]) -> dict:
-        return {
+        metrics = {
             "count": len(items),
             "recall_semantic": round(_avg(items, "recall_semantic"), 4),
             "recall_like": round(_avg(items, "recall_like"), 4),
@@ -280,6 +329,14 @@ def _aggregate(query_results: list[dict]) -> dict:
             "groundedness_semantic": round(_avg(items, "groundedness_semantic"), 4),
             "groundedness_like": round(_avg(items, "groundedness_like"), 4),
         }
+        # LLM-judge columns are present only when the eval ran with the judge.
+        # Require *every* item to carry them (not just items[0]) so heterogeneous
+        # judge data — e.g. a query added while EVAL_LLM_JUDGE was off — degrades
+        # gracefully instead of raising KeyError inside _avg.
+        if items and all("llm_judge_semantic" in i for i in items):
+            metrics["llm_judge_semantic"] = round(_avg(items, "llm_judge_semantic"), 4)
+            metrics["llm_judge_like"] = round(_avg(items, "llm_judge_like"), 4)
+        return metrics
 
     overall = _metrics_for(query_results)
     by_type = {}
@@ -321,6 +378,11 @@ def render_report(results_path: Path) -> str:
         f"| Groundedness | {overall['groundedness_semantic']:.2f} "
         f"| {overall['groundedness_like']:.2f} |"
     )
+    if "llm_judge_semantic" in overall:
+        lines.append(
+            f"| LLM-Judge Groundedness | {overall['llm_judge_semantic']:.2f} "
+            f"| {overall['llm_judge_like']:.2f} |"
+        )
     lines.append("")
 
     # Per-type breakdown

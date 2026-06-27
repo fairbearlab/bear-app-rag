@@ -2,6 +2,25 @@
 
 All notable changes to bear-rag will be documented in this file.
 
+## [0.3.1] - 2026-06-27
+
+### Added
+
+- Privacy guardrail test (`tests/test_privacy.py`): blocks all outbound network sockets (via `pytest-socket`) and asserts `NoteStore` construction, `upsert_chunks`, `query`, and `sync` all run offline, enforcing the ADR-0002 local-only guarantee. Includes a negative-control test so it can't pass vacuously. The `ask` / generator path is excluded — it legitimately calls the Anthropic API.
+- Committed LLM-judge groundedness column in the eval benchmark: Claude scores how well retrieved text supports each query, run on both the RAG and keyword paths. Surfaced in `results.json`, `BENCHMARK.md`, the README, the benchmark visualization, and `docs/EVALUATION.md` (RAG 0.71 vs keyword 0.65 overall; widest gap on paraphrase queries, 0.72 vs 0.55).
+- `pytest-socket` dev dependency.
+
+### Changed
+
+- LLM judge now fails closed: an API error or a non-numeric model reply raises `LLMJudgeError` instead of silently committing a `0.0` score as benchmark truth.
+- `_carry_forward_judge` preserves committed judge numbers across deterministic re-runs only when retrieval is unchanged (fingerprinted on retrieved PKs); it drops the column and warns on drift, so stale scores are never presented against new retrieval.
+- Refreshed locked dependencies (`uv lock --upgrade`): `anthropic` 0.86→0.112, `chromadb` 1.5.5→1.5.9, `mcp` 1.26→1.28.1, `pytest` 9.0→9.1.1 — all within existing version caps. Directional eval results hold and `results.json` is byte-identical across the `onnxruntime`/`tokenizers` bump.
+
+### Fixed
+
+- `_metrics_for` no longer raises `KeyError` on heterogeneous judge data (gates the judge columns on every query carrying them, not just the first).
+- `test_ask_requires_api_key` is now hermetic: it stubs `load_dotenv` so a developer's local `.env` can't re-supply the key the test deliberately removes.
+
 ## [0.3.0] - 2026-04-08
 
 ### Added

@@ -60,7 +60,7 @@ Indexing, embedding, and search are fully local: your notes are read, chunked, a
 
 RAG vs keyword (SQLite LIKE) retrieval on a 25-note synthetic corpus with 20 eval queries across four query types. Results from `tests/eval/results.json`.
 
-Three metrics, all higher = better: **Recall@5** is the fraction of expected notes that appear in the top 5 results; **MRR** captures how high the first correct note ranks (1.0 = always first); **Groundedness** is the fraction of expected keywords present in the retrieved text. Full definitions are in [EVALUATION.md](docs/EVALUATION.md).
+Four metrics, all higher = better: **Recall@5** is the fraction of expected notes that appear in the top 5 results; **MRR** captures how high the first correct note ranks (1.0 = always first); **Groundedness** is the fraction of expected keywords present in the retrieved text; **LLM-Judge Groundedness** is Claude scoring (0.0–1.0) how well the retrieved text actually supports answering the query, run on both retrieval paths. Full definitions are in [EVALUATION.md](docs/EVALUATION.md).
 
 ### Aggregate Metrics
 
@@ -69,6 +69,9 @@ Three metrics, all higher = better: **Recall@5** is the fraction of expected not
 | Recall@5 | 0.92 | 0.76 |
 | MRR | 0.90 | 0.76 |
 | Groundedness | 0.86 | 0.80 |
+| LLM-Judge Groundedness | 0.71 | 0.65 |
+
+The keyword-overlap and LLM-judge groundedness metrics agree: RAG retrieves text that better supports the answer (judge 0.71 vs 0.65 overall), with the gap widest on the paraphrase queries it targets (0.72 vs 0.55).
 
 ### By Query Type
 

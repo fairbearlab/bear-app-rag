@@ -7,6 +7,7 @@
 | Recall@5 | 0.92 | 0.76 |
 | MRR | 0.90 | 0.76 |
 | Groundedness | 0.86 | 0.80 |
+| LLM-Judge Groundedness | 0.71 | 0.65 |
 
 ## By Query Type
 
