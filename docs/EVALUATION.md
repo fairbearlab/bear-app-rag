@@ -119,3 +119,10 @@ EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
 ## Reproducibility
 
 Results are generated on macOS ARM. ONNX Runtime uses different BLAS backends across platforms, which may cause minor floating-point differences. The directional results (RAG > LIKE on synonym/paraphrase) should hold everywhere. CI asserts directional wins only and does not regenerate `results.json`.
+
+## Roadmap / Future Work
+
+Two improvements would strengthen the eval without changing the methodology:
+
+- **Expand the eval corpus.** Scale from 25 notes / 20 queries to 50+ notes and 40+ queries for stronger statistical signal. The current corpus is sufficient for directional proof but honest about its limits (see [BUILDING.md](BUILDING.md) — "25 notes is honest but small").
+- **Record a machine fingerprint in `results.json`.** Capture platform, Python version, and onnxruntime version alongside the numbers, so cross-platform embedding determinism can be tracked over time rather than inferred.
