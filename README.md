@@ -38,6 +38,8 @@ The MCP server is the primary interface: it lets an AI agent like Claude Code se
 
 Claude Code can then search your notes during conversation.
 
+The same stdio server should work with any MCP-compatible host (for example Codex CLI, GitHub Copilot's agent mode, or the Claude desktop app) — point that host's MCP config at the same `bear-rag-mcp` command shown above. Only the Claude Code config above is tested; treat the others as starting points.
+
 ### Auto-sync with cron
 
 ```shell
@@ -46,10 +48,17 @@ Claude Code can then search your notes during conversation.
 
 ## How It Works
 
-```text
-Bear SQLite DB ──→ BearReader ──→ Chunker ──→ NoteStore (ChromaDB) ──→ MCP Server / CLI
-   (read-only)     (Core Data      (markdown-     (ONNX embeddings,      (search, read,
-                    timestamps)      aware split)   local vector store)    list, sync)
+```mermaid
+flowchart LR
+    subgraph local["On-device (no network)"]
+        DB[("Bear SQLite DB<br/>(read-only)")] --> BR["BearReader<br/>bear_reader.py"]
+        BR --> CH["Chunker<br/>chunker.py"]
+        CH --> NS["NoteStore (ChromaDB)<br/>store.py<br/>ONNX embeddings, local vector store"]
+        NS --> MCP["MCP Server<br/>mcp_server.py"]
+        NS --> CLI["CLI<br/>cli.py"]
+    end
+    MCP -. "returns chunks" .-> Agent["Connected AI agent"]
+    CLI -. "bear-rag ask<br/>(opt-in, needs ANTHROPIC_API_KEY)" .-> API["Anthropic API"]
 ```
 
 Indexing, embedding, and search are fully local: your notes are read, chunked, and embedded on-device via ONNX Runtime, and the only network call on that path is the one-time model download. Two paths are opt-in and do leave the machine: `bear-rag ask` sends the retrieved chunk text to the Anthropic API to generate an answer (only when `ANTHROPIC_API_KEY` is set), and the MCP server hands retrieved chunks to whatever agent is connected. See [ADR-0002](docs/decisions/0002-local-onnx-embeddings.md) for the full privacy audit.

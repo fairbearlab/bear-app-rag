@@ -6,6 +6,10 @@ title: "Building a Production RAG Pipeline Without LangChain"
 
 A technical essay on building bear-app-rag: a local-first semantic search system for Bear notes using 4 direct dependencies, zero frameworks, and provable benchmarks.
 
+## Why I Built This
+
+I keep most of my thinking in Bear. After a few hundred notes, finding the one I half-remembered became the bottleneck — Bear's search is keyword-only, and I rarely remember the exact words I used. I wanted to ask my notes a question in plain language and have the right ones surface, the same way I'd ask a colleague who'd read them. That meant semantic search, and I wanted the indexing and search to run on my own machine rather than shipping my notes off to a cloud service (asking an LLM to summarize a result is a separate, opt-in step). This project is the result, and I'm building it in the open as a portfolio piece — a small, fully-instrumented RAG pipeline I can point to and explain end to end.
+
 ## The Problem
 
 [Bear](https://bear.app) is a writing app for macOS and iOS. It stores notes in a local SQLite database. There is no API. There is no plugin system. Your notes are locked in that database.

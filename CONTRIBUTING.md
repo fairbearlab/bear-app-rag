@@ -35,7 +35,7 @@ Check [docs/decisions/](docs/decisions/) for ADRs explaining why things are the 
 ## What to Work On
 
 - Issues labeled "good first issue"
-- [TODOS.md](TODOS.md) for deferred work
+- [Roadmap / Future Work](docs/EVALUATION.md#roadmap--future-work) for deferred eval improvements
 - The eval corpus can always use more notes and queries
 
 ## Running Tests

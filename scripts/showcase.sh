@@ -28,6 +28,7 @@ uv run python -m tests.eval.eval_harness > tests/eval/BENCHMARK.md
 echo ""
 echo "=== Recording demo ==="
 if command -v asciinema &> /dev/null; then
+  mkdir -p docs/assets
   asciinema rec docs/assets/demo.cast --command="bash scripts/record-demo.sh" --overwrite
   echo "Convert to GIF: agg docs/assets/demo.cast docs/assets/demo.gif"
 else

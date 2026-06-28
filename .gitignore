@@ -1,9 +1,27 @@
+# Python
 __pycache__/
 *.pyc
 .venv/
 *.egg-info/
 dist/
+
+# Tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Editors / agents
+.idea/
+.vscode/
+.claude/
+.DS_Store
+
+# Local state / secrets / internal
 .env
 .bear-rag/
-.DS_Store
 backlog/

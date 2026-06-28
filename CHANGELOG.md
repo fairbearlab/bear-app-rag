@@ -2,6 +2,25 @@
 
 All notable changes to bear-rag will be documented in this file.
 
+## [0.3.2] - 2026-06-28
+
+### Added
+
+- First-person "Why I Built This" section near the top of `docs/BUILDING.md`, scoped honestly (indexing and search run locally; the LLM `ask` step is opt-in).
+- Mermaid "How It Works" flowchart in the README, replacing the ASCII diagram. It shows the read-only Bear source, the on-device pipeline, and the opt-in cloud paths (`ask` and the MCP-returns-chunks boundary), with module names aligned to the Project Structure table.
+- "Roadmap / Future Work" section in `docs/EVALUATION.md` (expand the eval corpus to 50+ notes / 40+ queries; record a machine fingerprint in `results.json`).
+- README callout that the same stdio server should work with any MCP-compatible host (Codex CLI, GitHub Copilot agent mode, Claude desktop app), noting that only the Claude Code config is tested.
+
+### Changed
+
+- Expanded `.gitignore` with a thorough Python template (`.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`, `.coverage`, `htmlcov/`, `*.log`, `.idea/`, `.vscode/`, `.claude/`), preventive — none were tracked.
+- `.python-version` 3.14 → 3.13, the highest version in the tested CI matrix (`requires-python` floor and README "3.11+" unchanged).
+- `scripts/showcase.sh` now `mkdir -p docs/assets` before recording, so the demo recording works without a pre-existing directory; `scripts/record-demo.sh` documents the required `mkdir -p docs/assets` in its usage line (the directory must exist before `asciinema` is invoked, which runs `record-demo.sh` as its command, so the script can't create it itself).
+
+### Removed
+
+- `TODOS.md` (internal phase-tracking bookkeeping). Its two forward-looking items moved into the new `docs/EVALUATION.md` roadmap; `CONTRIBUTING.md` now points there instead.
+
 ## [0.3.1] - 2026-06-27
 
 ### Added
