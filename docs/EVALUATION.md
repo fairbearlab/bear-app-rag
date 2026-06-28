@@ -77,11 +77,23 @@ groundedness = |keywords_found_in_text| / |expected_keywords|
 
 For RAG, "retrieved text" is the chunk text. For LIKE, it's the full note text of matched notes.
 
-### LLM Judge Groundedness (Optional)
+### LLM Judge Groundedness
 
-Claude scores (0.0-1.0) whether retrieved chunks contain enough information to answer the query. Requires `ANTHROPIC_API_KEY` and `EVAL_LLM_JUDGE=1` env var.
+Claude scores (0.0-1.0) whether the retrieved text contains enough information to answer the query. Unlike keyword groundedness, the judge reads the text and reasons about whether it supports the answer, so it credits relevant retrievals that share no surface keywords. It runs on **both** retrieval paths — RAG chunk text and the LIKE note text — using the same model as the rest of the project (`config.CLAUDE_MODEL`, an undated alias). Requires `ANTHROPIC_API_KEY` and `EVAL_LLM_JUDGE=1`.
 
-The LLM judge is available but **not part of the committed benchmark**. It needs an API key, so it is opt-in and its scores are not deterministic or checked into `results.json`. The deterministic keyword groundedness above is the source of truth for every number quoted in the README and the writeups; no LLM-judge figures are committed anywhere in this repo.
+Committed results (from one `EVAL_LLM_JUDGE=1` run):
+
+| Query Type | LLM-Judge RAG | LLM-Judge LIKE |
+|------------|---------------|----------------|
+| exact_match | 0.88 | 0.93 |
+| synonym | 0.68 | 0.49 |
+| paraphrase | 0.72 | 0.55 |
+| multi_concept | 0.54 | 0.63 |
+| **Overall** | **0.71** | **0.65** |
+
+The judge corroborates the deterministic metrics: RAG wins on synonym and paraphrase queries (where the query wording diverges from the notes) and trails on exact_match and multi_concept (where the keyword baseline retrieves verbatim matches and ranks them well). On paraphrase queries q7 and q10, keyword search retrieved nothing relevant (recall 0.0) and the judge scored its retrieved text 0.0 — the sharpest illustration of the RAG advantage.
+
+**Why it lives alongside, not inside, the deterministic source of truth.** The judge needs an API key, makes 40 calls per run, and is not bit-reproducible (the model's score varies run to run). So it runs only under `EVAL_LLM_JUDGE=1`; a plain `pytest -m eval` recomputes the deterministic metrics and carries the committed `llm_judge_*` columns forward unchanged rather than wiping them. The deterministic keyword groundedness remains the source of truth for CI's directional assertions, which never call the API.
 
 ## Running the Eval
 

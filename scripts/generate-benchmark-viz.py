@@ -104,6 +104,11 @@ def generate() -> str:
     metric_labels = ["Recall@5", "MRR", "Groundedness"]
     overall_rag = [overall["recall_semantic"], overall["mrr_semantic"], overall["groundedness_semantic"]]
     overall_like = [overall["recall_like"], overall["mrr_like"], overall["groundedness_like"]]
+    # LLM-judge groundedness is only present when the eval ran with EVAL_LLM_JUDGE=1.
+    if "llm_judge_semantic" in overall:
+        metric_labels.append("LLM-Judge")
+        overall_rag.append(overall["llm_judge_semantic"])
+        overall_like.append(overall["llm_judge_like"])
     chart3 = _bar_chart_svg("Overall Metrics", metric_labels, overall_rag, overall_like)
 
     html = f"""---

@@ -8,13 +8,17 @@ from __future__ import annotations
 
 import json
 import os
+import warnings
 from pathlib import Path
 
 import pytest
 
 from tests.eval.eval_harness import (
     EvalCorpus,
+    LLMJudgeError,
+    _aggregate,
     keyword_groundedness,
+    llm_judge_text,
     mrr,
     recall_at_k,
     render_report,
@@ -138,10 +142,87 @@ def queries():
     return json.loads((_FIXTURES_DIR / "queries.json").read_text())
 
 
+def _llm_judge_enabled() -> bool:
+    return bool(os.environ.get("EVAL_LLM_JUDGE") and os.environ.get("ANTHROPIC_API_KEY"))
+
+
+def _retrieval_matches(prior_q: dict, q: dict) -> bool:
+    """Whether a committed judge score still describes this run's judged text.
+
+    Prefers the content fingerprint (a hash of the exact text the judge scored),
+    so re-chunking or note edits that keep the same PKs but change the text are
+    caught. Falls back to the retrieved-PK fingerprint for legacy committed
+    results.json written before the text hashes existed.
+    """
+    if "semantic_text_sha" in prior_q and "like_text_sha" in prior_q:
+        return (
+            prior_q["semantic_text_sha"] == q.get("semantic_text_sha")
+            and prior_q["like_text_sha"] == q.get("like_text_sha")
+        )
+    return (
+        prior_q.get("semantic_pks") == q["semantic_pks"]
+        and prior_q.get("like_pks") == q["like_pks"]
+    )
+
+
+def _carry_forward_judge(results: dict) -> None:
+    """Preserve committed LLM-judge numbers across a judge-disabled re-run.
+
+    The judge is non-deterministic and API-backed, so it only runs with
+    EVAL_LLM_JUDGE=1. A plain ``pytest -m eval`` recomputes the deterministic
+    metrics and would otherwise wipe the committed judge column from results.json.
+
+    Carry forward is **all-or-nothing** and **content-fingerprinted**: a prior
+    query's judge score is reused only if the judged text still matches this
+    run's. The judge scores joined text, so the fingerprint is a hash of that
+    text (``semantic_text_sha`` / ``like_text_sha``) — this catches re-chunking
+    or note edits that leave the retrieved PKs identical but change what the
+    judge saw. Legacy committed results.json that predates the text hashes falls
+    back to the PK fingerprint (``semantic_pks`` / ``like_pks``). If retrieval or
+    text shifted — e.g. a dependency upgrade changed the embeddings — the
+    committed judge score no longer describes the text that was actually
+    retrieved, so the whole column is dropped and a warning tells the user to
+    re-run with EVAL_LLM_JUDGE=1. Better an absent column than a stale one
+    silently presented as benchmark truth.
+    """
+    if not _RESULTS_PATH.exists():
+        return
+    prior_queries = json.loads(_RESULTS_PATH.read_text()).get("queries", [])
+    prior_by_id = {q["id"]: q for q in prior_queries}
+
+    # Judge never ran (no committed scores) — nothing to preserve, no staleness risk.
+    if not any("llm_judge_semantic" in q for q in prior_queries):
+        return
+
+    for q in results["queries"]:
+        prior_q = prior_by_id.get(q["id"])
+        if (
+            prior_q is None
+            or "llm_judge_semantic" not in prior_q
+            or "llm_judge_like" not in prior_q
+            or not _retrieval_matches(prior_q, q)
+        ):
+            warnings.warn(
+                "LLM-judge column dropped: committed results.json judge data is "
+                "incomplete or its retrieval no longer matches this run. "
+                "Re-run with EVAL_LLM_JUDGE=1 to regenerate it."
+            )
+            return
+
+    for q in results["queries"]:
+        prior_q = prior_by_id[q["id"]]
+        q["llm_judge_semantic"] = prior_q["llm_judge_semantic"]
+        q["llm_judge_like"] = prior_q["llm_judge_like"]
+    results["aggregates"] = _aggregate(results["queries"])
+
+
 @pytest.fixture(scope="module")
 def eval_results(corpus, queries):
     """Run eval and return results. Also writes results.json and BENCHMARK.md."""
-    results = run_eval(corpus, queries, k=5)
+    judge = _llm_judge_enabled()
+    results = run_eval(corpus, queries, k=5, judge=judge)
+    if not judge:
+        _carry_forward_judge(results)
 
     # Write artifacts
     _RESULTS_PATH.write_text(json.dumps(results, indent=2))
@@ -226,3 +307,229 @@ class TestLLMJudge:
         chunks = corpus.semantic_chunks(q["query"], k=5)
         score = llm_judge_groundedness(q["query"], chunks, q["answer_context"])
         assert 0.0 <= score <= 1.0
+
+    def test_judge_column_written_to_results(self, eval_results):
+        """With the judge enabled, the column lands in both aggregates and per-query rows."""
+        overall = eval_results["aggregates"]["overall"]
+        assert "llm_judge_semantic" in overall
+        assert "llm_judge_like" in overall
+        assert 0.0 <= overall["llm_judge_semantic"] <= 1.0
+        assert 0.0 <= overall["llm_judge_like"] <= 1.0
+
+        for q in eval_results["queries"]:
+            assert "llm_judge_semantic" in q
+            assert "llm_judge_like" in q
+
+        # Persisted to results.json and surfaced in BENCHMARK.md
+        persisted = json.loads(_RESULTS_PATH.read_text())
+        assert "llm_judge_semantic" in persisted["aggregates"]["overall"]
+        assert "LLM-Judge Groundedness" in _BENCHMARK_PATH.read_text()
+
+
+# ------------------------------------------------------------------
+# LLM judge fails closed (no API key needed — fully mocked)
+# ------------------------------------------------------------------
+
+
+def _mock_anthropic(monkeypatch, *, reply_text=None, error=None):
+    """Patch anthropic.Anthropic so llm_judge_text runs without a real API call."""
+    import anthropic
+    from unittest.mock import MagicMock
+
+    if error is not None:
+        monkeypatch.setattr(
+            anthropic, "Anthropic", MagicMock(side_effect=error)
+        )
+        return
+
+    block = MagicMock()
+    block.text = reply_text
+    response = MagicMock()
+    response.content = [block]
+    client = MagicMock()
+    client.messages.create.return_value = response
+    monkeypatch.setattr(anthropic, "Anthropic", MagicMock(return_value=client))
+
+
+class TestLLMJudgeFailsClosed:
+    """The judge must never silently turn a failure into a committed 0.0 score."""
+
+    def test_requires_api_key(self, monkeypatch):
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        with pytest.raises(EnvironmentError):
+            llm_judge_text("q", "some text", "ctx")
+
+    def test_raises_on_api_error(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+        _mock_anthropic(monkeypatch, error=RuntimeError("rate limited"))
+        with pytest.raises(LLMJudgeError):
+            llm_judge_text("q", "some text", "ctx")
+
+    def test_raises_on_non_numeric_reply(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+        _mock_anthropic(monkeypatch, reply_text="0.72 because it's relevant")
+        with pytest.raises(LLMJudgeError):
+            llm_judge_text("q", "some text", "ctx")
+
+    def test_parses_and_clamps_valid_reply(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+        _mock_anthropic(monkeypatch, reply_text="1.5")  # out of range
+        assert llm_judge_text("q", "some text", "ctx") == 1.0
+
+    @pytest.mark.parametrize("reply", ["nan", "inf", "-inf", "infinity"])
+    def test_raises_on_non_finite_reply(self, monkeypatch, reply):
+        # float() accepts these; without the isfinite guard nan/inf clamp to a
+        # fake 1.0 and silently defeat fail-closed.
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+        _mock_anthropic(monkeypatch, reply_text=reply)
+        with pytest.raises(LLMJudgeError):
+            llm_judge_text("q", "some text", "ctx")
+
+    def test_raises_on_unexpected_response_shape(self, monkeypatch):
+        # Empty content list -> IndexError, must surface as LLMJudgeError.
+        import anthropic
+        from unittest.mock import MagicMock
+
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+        response = MagicMock()
+        response.content = []
+        client = MagicMock()
+        client.messages.create.return_value = response
+        monkeypatch.setattr(anthropic, "Anthropic", MagicMock(return_value=client))
+        with pytest.raises(LLMJudgeError):
+            llm_judge_text("q", "some text", "ctx")
+
+
+class TestCarryForwardJudge:
+    """Carry-forward must drop the judge column when retrieval drifts, not present
+    stale scores as benchmark truth."""
+
+    def test_drops_stale_judge_when_retrieval_changed(self, monkeypatch, tmp_path):
+        import tests.eval.test_eval as te
+
+        prior = {
+            "queries": [
+                {
+                    "id": "q1",
+                    "semantic_pks": [1, 2],
+                    "like_pks": [3],
+                    "llm_judge_semantic": 0.9,
+                    "llm_judge_like": 0.4,
+                }
+            ]
+        }
+        path = tmp_path / "results.json"
+        path.write_text(json.dumps(prior))
+        monkeypatch.setattr(te, "_RESULTS_PATH", path)
+
+        # Same query id, but retrieval shifted (semantic_pks differ).
+        results = {
+            "queries": [{"id": "q1", "semantic_pks": [9, 9], "like_pks": [3]}],
+            "aggregates": {},
+        }
+        with pytest.warns(UserWarning, match="LLM-judge column dropped"):
+            te._carry_forward_judge(results)
+
+        assert "llm_judge_semantic" not in results["queries"][0]
+
+    def test_drops_stale_judge_when_text_changed_but_pks_same(
+        self, monkeypatch, tmp_path
+    ):
+        # Re-chunking / note edit: same PKs, different judged text -> drop.
+        import tests.eval.test_eval as te
+
+        prior = {
+            "queries": [
+                {
+                    "id": "q1",
+                    "semantic_pks": [1, 2],
+                    "like_pks": [3],
+                    "semantic_text_sha": "old-sem",
+                    "like_text_sha": "old-like",
+                    "llm_judge_semantic": 0.9,
+                    "llm_judge_like": 0.4,
+                }
+            ]
+        }
+        path = tmp_path / "results.json"
+        path.write_text(json.dumps(prior))
+        monkeypatch.setattr(te, "_RESULTS_PATH", path)
+
+        results = {
+            "queries": [
+                {
+                    "id": "q1",
+                    "semantic_pks": [1, 2],
+                    "like_pks": [3],
+                    "semantic_text_sha": "new-sem",  # text drifted
+                    "like_text_sha": "old-like",
+                }
+            ],
+            "aggregates": {},
+        }
+        with pytest.warns(UserWarning, match="LLM-judge column dropped"):
+            te._carry_forward_judge(results)
+
+        assert "llm_judge_semantic" not in results["queries"][0]
+
+    def test_carries_forward_legacy_results_via_pk_fallback(
+        self, monkeypatch, tmp_path
+    ):
+        # Committed results predating text hashes still carry forward on PK match.
+        import tests.eval.test_eval as te
+
+        prior = {
+            "queries": [
+                {
+                    "id": "q1",
+                    "semantic_pks": [1, 2],
+                    "like_pks": [3],
+                    "llm_judge_semantic": 0.9,
+                    "llm_judge_like": 0.4,
+                }
+            ]
+        }
+        path = tmp_path / "results.json"
+        path.write_text(json.dumps(prior))
+        monkeypatch.setattr(te, "_RESULTS_PATH", path)
+
+        # Carry-forward succeeds here, so the query must carry the deterministic
+        # metric fields _aggregate consumes when it re-aggregates.
+        results = {
+            "queries": [
+                {
+                    "id": "q1",
+                    "type": "factual",
+                    "semantic_pks": [1, 2],
+                    "like_pks": [3],
+                    "semantic_text_sha": "new-sem",
+                    "like_text_sha": "new-like",
+                    "recall_semantic": 1.0,
+                    "recall_like": 0.0,
+                    "mrr_semantic": 1.0,
+                    "mrr_like": 0.0,
+                    "groundedness_semantic": 1.0,
+                    "groundedness_like": 0.0,
+                }
+            ],
+            "aggregates": {},
+        }
+        te._carry_forward_judge(results)
+
+        assert results["queries"][0]["llm_judge_semantic"] == 0.9
+        assert results["queries"][0]["llm_judge_like"] == 0.4
+        assert results["aggregates"]["overall"]["llm_judge_semantic"] == 0.9
+
+    def test_silent_when_judge_never_ran(self, monkeypatch, tmp_path, recwarn):
+        import tests.eval.test_eval as te
+
+        prior = {"queries": [{"id": "q1", "semantic_pks": [1], "like_pks": [3]}]}
+        path = tmp_path / "results.json"
+        path.write_text(json.dumps(prior))
+        monkeypatch.setattr(te, "_RESULTS_PATH", path)
+
+        results = {"queries": [{"id": "q1", "semantic_pks": [1], "like_pks": [3]}], "aggregates": {}}
+        te._carry_forward_judge(results)
+
+        assert len(recwarn) == 0  # no judge data committed -> no warning, no-op
+        assert "llm_judge_semantic" not in results["queries"][0]

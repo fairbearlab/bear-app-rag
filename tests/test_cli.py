@@ -93,6 +93,9 @@ def test_ask_requires_api_key(mock_store_cls, mock_reader_cls, monkeypatch):
     """bear-rag ask without ANTHROPIC_API_KEY should exit with status 1."""
     monkeypatch.setattr("sys.argv", ["bear-rag", "ask", "What is Python?"])
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    # main() calls load_dotenv(); stub it so a developer's local .env can't
+    # re-supply the key we just removed (keeps the test hermetic).
+    monkeypatch.setattr("bear_rag.cli.load_dotenv", lambda *a, **k: None)
 
     with pytest.raises(SystemExit) as exc_info:
         main()

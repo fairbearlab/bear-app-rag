@@ -20,6 +20,8 @@ Use ChromaDB's built-in `DefaultEmbeddingFunction` which runs all-MiniLM-L6-v2 v
 
 **Privacy audit results (Phase 4):** ChromaDB includes opt-out telemetry (`ANONYMIZED_TELEMETRY` env var). We disable it at import time in `config.py:os.environ.setdefault`. ONNX Runtime makes no network calls during inference. On the indexing/embedding/search path the only network call is the one-time ~90MB model download on first use, fetched from ChromaDB's S3 bucket (`chroma-onnx-models.s3.amazonaws.com`).
 
+**Enforcement:** this guarantee is regression-tested, not just documented. `tests/test_privacy.py` pre-warms the model cache, blocks all outbound network sockets (via `pytest-socket`), and asserts that `NoteStore` construction, `upsert_chunks`, `query`, and `sync` all still succeed — with a negative-control test proving the socket block is actually installed. The `ask` / generator path is deliberately excluded, since it legitimately calls the Anthropic API.
+
 **Scope of the guarantee.** The local-only property covers the retrieval path (`index`, `sync`, `search`, `status`). Two paths are opt-in and deliberately send note content off the machine: `generator.py` (the `bear-rag ask` command) posts retrieved chunk text to the Anthropic API to draft an answer, and only when `ANTHROPIC_API_KEY` is set; and the MCP server returns retrieved chunks to whatever agent is connected, which is a trust boundary the user opts into by wiring up the server. The privacy claim is about embedding and retrieval, not about these answer-generation paths.
 
 The embedding model (all-MiniLM-L6-v2) is pinned via explicit `DefaultEmbeddingFunction()` in `store.py` to ensure reproducibility across ChromaDB versions.

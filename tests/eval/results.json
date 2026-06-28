@@ -42,7 +42,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.8,
+      "llm_judge_like": 0.7
     },
     {
       "id": "q2",
@@ -84,7 +86,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 0.5,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.7,
+      "llm_judge_like": 0.3
     },
     {
       "id": "q3",
@@ -127,7 +131,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 0.8333333333333334
+      "groundedness_like": 0.8333333333333334,
+      "llm_judge_semantic": 0.72,
+      "llm_judge_like": 0.72
     },
     {
       "id": "q4",
@@ -170,7 +176,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 0.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 0.0
+      "groundedness_like": 0.0,
+      "llm_judge_semantic": 0.7,
+      "llm_judge_like": 0.05
     },
     {
       "id": "q5",
@@ -212,7 +220,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 0.6666666666666666,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.5,
+      "llm_judge_like": 0.7
     },
     {
       "id": "q6",
@@ -252,7 +262,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 0.2,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.8,
+      "llm_judge_like": 0.9
     },
     {
       "id": "q7",
@@ -294,7 +306,9 @@
       "mrr_semantic": 0.5,
       "mrr_like": 0.0,
       "groundedness_semantic": 0.3333333333333333,
-      "groundedness_like": 0.3333333333333333
+      "groundedness_like": 0.3333333333333333,
+      "llm_judge_semantic": 0.3,
+      "llm_judge_like": 0.0
     },
     {
       "id": "q8",
@@ -336,7 +350,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.9,
+      "llm_judge_like": 0.9
     },
     {
       "id": "q9",
@@ -378,7 +394,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 0.8333333333333334
+      "groundedness_like": 0.8333333333333334,
+      "llm_judge_semantic": 0.9,
+      "llm_judge_like": 0.97
     },
     {
       "id": "q10",
@@ -420,7 +438,9 @@
       "mrr_semantic": 0.3333333333333333,
       "mrr_like": 0.0,
       "groundedness_semantic": 0.8333333333333334,
-      "groundedness_like": 0.16666666666666666
+      "groundedness_like": 0.16666666666666666,
+      "llm_judge_semantic": 0.72,
+      "llm_judge_like": 0.0
     },
     {
       "id": "q11",
@@ -464,7 +484,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 0.5714285714285714,
-      "groundedness_like": 0.5714285714285714
+      "groundedness_like": 0.5714285714285714,
+      "llm_judge_semantic": 0.7,
+      "llm_judge_like": 0.55
     },
     {
       "id": "q12",
@@ -508,7 +530,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 0.6666666666666666
+      "groundedness_like": 0.6666666666666666,
+      "llm_judge_semantic": 0.8,
+      "llm_judge_like": 0.4
     },
     {
       "id": "q13",
@@ -552,7 +576,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 0.5,
-      "groundedness_like": 0.6666666666666666
+      "groundedness_like": 0.6666666666666666,
+      "llm_judge_semantic": 0.3,
+      "llm_judge_like": 0.62
     },
     {
       "id": "q14",
@@ -596,7 +622,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.82,
+      "llm_judge_like": 0.9
     },
     {
       "id": "q15",
@@ -639,7 +667,9 @@
       "mrr_semantic": 0.2,
       "mrr_like": 0.5,
       "groundedness_semantic": 0.3333333333333333,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.1,
+      "llm_judge_like": 0.7
     },
     {
       "id": "q16",
@@ -675,7 +705,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.8,
+      "llm_judge_like": 0.8
     },
     {
       "id": "q17",
@@ -717,7 +749,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.85,
+      "llm_judge_like": 1.0
     },
     {
       "id": "q18",
@@ -759,7 +793,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.9,
+      "llm_judge_like": 0.97
     },
     {
       "id": "q19",
@@ -797,7 +833,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.95,
+      "llm_judge_like": 0.95
     },
     {
       "id": "q20",
@@ -839,7 +877,9 @@
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0
+      "groundedness_like": 1.0,
+      "llm_judge_semantic": 0.9,
+      "llm_judge_like": 0.95
     }
   ],
   "aggregates": {
@@ -850,7 +890,9 @@
       "mrr_semantic": 0.9017,
       "mrr_like": 0.76,
       "groundedness_semantic": 0.8619,
-      "groundedness_like": 0.8036
+      "groundedness_like": 0.8036,
+      "llm_judge_semantic": 0.708,
+      "llm_judge_like": 0.654
     },
     "by_type": {
       "exact_match": {
@@ -860,7 +902,9 @@
         "mrr_semantic": 1.0,
         "mrr_like": 1.0,
         "groundedness_semantic": 1.0,
-        "groundedness_like": 1.0
+        "groundedness_like": 1.0,
+        "llm_judge_semantic": 0.88,
+        "llm_judge_like": 0.934
       },
       "multi_concept": {
         "count": 5,
@@ -869,7 +913,9 @@
         "mrr_semantic": 0.84,
         "mrr_like": 0.9,
         "groundedness_semantic": 0.681,
-        "groundedness_like": 0.781
+        "groundedness_like": 0.781,
+        "llm_judge_semantic": 0.544,
+        "llm_judge_like": 0.634
       },
       "paraphrase": {
         "count": 5,
@@ -878,7 +924,9 @@
         "mrr_semantic": 0.7667,
         "mrr_like": 0.44,
         "groundedness_semantic": 0.8333,
-        "groundedness_like": 0.6667
+        "groundedness_like": 0.6667,
+        "llm_judge_semantic": 0.724,
+        "llm_judge_like": 0.554
       },
       "synonym": {
         "count": 5,
@@ -887,7 +935,9 @@
         "mrr_semantic": 1.0,
         "mrr_like": 0.7,
         "groundedness_semantic": 0.9333,
-        "groundedness_like": 0.7667
+        "groundedness_like": 0.7667,
+        "llm_judge_semantic": 0.684,
+        "llm_judge_like": 0.494
       }
     }
   }
