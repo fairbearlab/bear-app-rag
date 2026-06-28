@@ -15,7 +15,7 @@ All notable changes to bear-rag will be documented in this file.
 
 - Expanded `.gitignore` with a thorough Python template (`.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`, `.coverage`, `htmlcov/`, `*.log`, `.idea/`, `.vscode/`, `.claude/`), preventive — none were tracked.
 - `.python-version` 3.14 → 3.13, the highest version in the tested CI matrix (`requires-python` floor and README "3.11+" unchanged).
-- `scripts/record-demo.sh` and `scripts/showcase.sh` now `mkdir -p docs/assets` before writing, so recording works without a pre-existing directory.
+- `scripts/showcase.sh` now `mkdir -p docs/assets` before recording, so the demo recording works without a pre-existing directory; `scripts/record-demo.sh` documents the required `mkdir -p docs/assets` in its usage line (the directory must exist before `asciinema` is invoked, which runs `record-demo.sh` as its command, so the script can't create it itself).
 
 ### Removed
 
