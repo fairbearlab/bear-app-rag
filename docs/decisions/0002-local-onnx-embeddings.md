@@ -24,7 +24,9 @@ Use ChromaDB's built-in `DefaultEmbeddingFunction` which runs all-MiniLM-L6-v2 v
 
 **Scope of the guarantee.** The local-only property covers the retrieval path (`index`, `sync`, `search`, `status`). Two paths are opt-in and deliberately send note content off the machine: `generator.py` (the `bear-rag ask` command) posts retrieved chunk text to the Anthropic API to draft an answer, and only when `ANTHROPIC_API_KEY` is set; and the MCP server returns retrieved chunks to whatever agent is connected, which is a trust boundary the user opts into by wiring up the server. The privacy claim is about embedding and retrieval, not about these answer-generation paths.
 
-The embedding model (all-MiniLM-L6-v2) is pinned via explicit `DefaultEmbeddingFunction()` in `store.py` to ensure reproducibility across ChromaDB versions.
+The embedding model (all-MiniLM-L6-v2) is pinned via explicit `DefaultEmbeddingFunction()` in `store.py` to ensure reproducibility across ChromaDB versions. `NoteStore` exposes an optional `embedding_function` injection point so alternate local models can be benchmarked, but the production default is unchanged.
+
+**Model choice is now measured, not asserted (Phase 5).** [ADR-0008](0008-embedding-model-evaluation.md) ran the BGE, GTE, Snowflake Arctic, and Nomic families through the eval harness and concluded: keep all-MiniLM-L6-v2. No candidate's gains cleared statistical noise on the n=20 corpus, and the only model that led directionally (nomic-embed-text-v1.5) would have cost a 12× disk footprint and a full re-index. See ADR-0008 for the comparison table and the follow-ups that could change the call.
 
 ## Alternatives Considered
 

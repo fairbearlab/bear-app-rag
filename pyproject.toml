@@ -1,6 +1,6 @@
 [project]
 name = "bear-rag"
-version = "0.3.2"
+version = "0.4.0"
 description = "Local-first RAG pipeline for Bear notes with ONNX embeddings and MCP server"
 readme = "README.md"
 license = "MIT"
@@ -28,6 +28,11 @@ Documentation = "https://fairbearlab.github.io/bear-app-rag/"
 
 [project.optional-dependencies]
 dev = ["pytest>=9.0,<10.0", "pytest-socket>=0.8.0"]
+# Research-only: runs alternate local ONNX embedding models for the
+# embedding-model sweep (tests/eval/embedding_sweep.py, ADR-0008). fastembed is
+# Apache-2.0 and ONNX-Runtime based (no PyTorch). NOT a runtime dependency — the
+# shipped pipeline uses ChromaDB's bundled ONNX MiniLM (ADR-0002).
+research = ["fastembed>=0.4,<1.0"]
 
 [project.scripts]
 bear-rag = "bear_rag.cli:main"

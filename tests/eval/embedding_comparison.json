@@ -1,0 +1,254 @@
+[
+  {
+    "key": "minilm-l6-v2",
+    "baseline": true,
+    "model_id": "chromadb/DefaultEmbeddingFunction",
+    "reported_dim": 384,
+    "reported_size_gb": 0.09,
+    "license": "apache-2.0",
+    "family": "minilm",
+    "note": "Production baseline: ChromaDB DefaultEmbeddingFunction.",
+    "ok": true,
+    "recall": 0.9167,
+    "mrr": 0.9017,
+    "groundedness": 0.8619,
+    "by_type": {
+      "exact_match": {
+        "recall": 1.0,
+        "mrr": 1.0,
+        "groundedness": 1.0
+      },
+      "multi_concept": {
+        "recall": 0.8333,
+        "mrr": 0.84,
+        "groundedness": 0.681
+      },
+      "paraphrase": {
+        "recall": 1.0,
+        "mrr": 0.7667,
+        "groundedness": 0.8333
+      },
+      "synonym": {
+        "recall": 0.8333,
+        "mrr": 1.0,
+        "groundedness": 0.9333
+      }
+    },
+    "index_secs": 0.993,
+    "eval_secs": 1.918,
+    "n_queries": 20,
+    "disk_mb": null
+  },
+  {
+    "key": "nomic-embed-v1.5",
+    "baseline": false,
+    "model_id": "nomic-ai/nomic-embed-text-v1.5",
+    "reported_dim": 768,
+    "reported_size_gb": 0.52,
+    "license": "apache-2.0",
+    "family": "nomic",
+    "note": "768-dim, long-context (2048) capable.",
+    "ok": true,
+    "recall": 0.975,
+    "mrr": 0.8792,
+    "groundedness": 0.8833,
+    "by_type": {
+      "exact_match": {
+        "recall": 1.0,
+        "mrr": 1.0,
+        "groundedness": 1.0
+      },
+      "multi_concept": {
+        "recall": 0.9,
+        "mrr": 0.8667,
+        "groundedness": 0.8333
+      },
+      "paraphrase": {
+        "recall": 1.0,
+        "mrr": 0.75,
+        "groundedness": 0.7333
+      },
+      "synonym": {
+        "recall": 1.0,
+        "mrr": 0.9,
+        "groundedness": 0.9667
+      }
+    },
+    "index_secs": 3.34,
+    "eval_secs": 0.351,
+    "n_queries": 20,
+    "disk_mb": 1096.1
+  },
+  {
+    "key": "bge-small-en-v1.5",
+    "baseline": false,
+    "model_id": "BAAI/bge-small-en-v1.5",
+    "reported_dim": 384,
+    "reported_size_gb": 0.067,
+    "license": "mit",
+    "family": "bge",
+    "note": "Direct 384-dim drop-in; strong MTEB for its size.",
+    "ok": true,
+    "recall": 0.925,
+    "mrr": 0.8725,
+    "groundedness": 0.8643,
+    "by_type": {
+      "exact_match": {
+        "recall": 1.0,
+        "mrr": 1.0,
+        "groundedness": 1.0
+      },
+      "multi_concept": {
+        "recall": 0.7667,
+        "mrr": 0.84,
+        "groundedness": 0.6905
+      },
+      "paraphrase": {
+        "recall": 1.0,
+        "mrr": 0.75,
+        "groundedness": 0.8667
+      },
+      "synonym": {
+        "recall": 0.9333,
+        "mrr": 0.9,
+        "groundedness": 0.9
+      }
+    },
+    "index_secs": 1.186,
+    "eval_secs": 0.165,
+    "n_queries": 20,
+    "disk_mb": 134.4
+  },
+  {
+    "key": "bge-base-en-v1.5",
+    "baseline": false,
+    "model_id": "BAAI/bge-base-en-v1.5",
+    "reported_dim": 768,
+    "reported_size_gb": 0.21,
+    "license": "mit",
+    "family": "bge",
+    "note": "768-dim; re-index required (dim change).",
+    "ok": true,
+    "recall": 0.9,
+    "mrr": 0.8375,
+    "groundedness": 0.8619,
+    "by_type": {
+      "exact_match": {
+        "recall": 1.0,
+        "mrr": 1.0,
+        "groundedness": 1.0
+      },
+      "multi_concept": {
+        "recall": 0.7667,
+        "mrr": 0.75,
+        "groundedness": 0.681
+      },
+      "paraphrase": {
+        "recall": 1.0,
+        "mrr": 0.7,
+        "groundedness": 0.8667
+      },
+      "synonym": {
+        "recall": 0.8333,
+        "mrr": 0.9,
+        "groundedness": 0.9
+      }
+    },
+    "index_secs": 2.851,
+    "eval_secs": 0.262,
+    "n_queries": 20,
+    "disk_mb": 437.1
+  },
+  {
+    "key": "arctic-embed-m",
+    "baseline": false,
+    "model_id": "snowflake/snowflake-arctic-embed-m",
+    "reported_dim": 768,
+    "reported_size_gb": 0.43,
+    "license": "apache-2.0",
+    "family": "arctic",
+    "note": "768-dim retrieval-tuned mid model.",
+    "ok": true,
+    "recall": 0.8583,
+    "mrr": 0.695,
+    "groundedness": 0.6417,
+    "by_type": {
+      "exact_match": {
+        "recall": 1.0,
+        "mrr": 0.75,
+        "groundedness": 0.9333
+      },
+      "multi_concept": {
+        "recall": 0.6,
+        "mrr": 0.45,
+        "groundedness": 0.4429
+      },
+      "paraphrase": {
+        "recall": 1.0,
+        "mrr": 0.68,
+        "groundedness": 0.5571
+      },
+      "synonym": {
+        "recall": 0.8333,
+        "mrr": 0.9,
+        "groundedness": 0.6333
+      }
+    },
+    "index_secs": 2.73,
+    "eval_secs": 0.341,
+    "n_queries": 20,
+    "disk_mb": 873.1
+  },
+  {
+    "key": "arctic-embed-s",
+    "baseline": false,
+    "model_id": "snowflake/snowflake-arctic-embed-s",
+    "reported_dim": 384,
+    "reported_size_gb": 0.13,
+    "license": "apache-2.0",
+    "family": "arctic",
+    "note": "2024-era retrieval-tuned small model, 384-dim drop-in.",
+    "ok": true,
+    "recall": 0.8417,
+    "mrr": 0.6058,
+    "groundedness": 0.6738,
+    "by_type": {
+      "exact_match": {
+        "recall": 1.0,
+        "mrr": 1.0,
+        "groundedness": 1.0
+      },
+      "multi_concept": {
+        "recall": 0.5333,
+        "mrr": 0.4167,
+        "groundedness": 0.4381
+      },
+      "paraphrase": {
+        "recall": 1.0,
+        "mrr": 0.54,
+        "groundedness": 0.6571
+      },
+      "synonym": {
+        "recall": 0.8333,
+        "mrr": 0.4667,
+        "groundedness": 0.6
+      }
+    },
+    "index_secs": 1.129,
+    "eval_secs": 0.181,
+    "n_queries": 20,
+    "disk_mb": 267.6
+  },
+  {
+    "key": "gte-base",
+    "baseline": false,
+    "model_id": "thenlper/gte-base",
+    "reported_dim": 768,
+    "reported_size_gb": 0.44,
+    "license": "mit",
+    "family": "gte",
+    "note": "768-dim general text embeddings.",
+    "ok": false,
+    "error": "ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 1 dimensions. The detected shape was (100,) + inhomogeneous part. in upsert."
+  }
+]

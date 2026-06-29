@@ -115,6 +115,8 @@ EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
 | `tests/eval/BENCHMARK.md` | Generated markdown report |
 | `tests/eval/eval_harness.py` | All eval logic: corpus, retrievers, metrics, report renderer |
 | `tests/eval/test_eval.py` | Pytest module with directional assertions and metric unit tests |
+| `tests/eval/embedding_sweep.py` | Research harness: scores alternate local ONNX embedding models on this corpus (see [ADR-0008](decisions/0008-embedding-model-evaluation.md)) |
+| `tests/eval/embedding_comparison.{json,md}` | Committed embedding-model comparison data and table |
 
 ## Reproducibility
 
@@ -124,5 +126,6 @@ Results are generated on macOS ARM. ONNX Runtime uses different BLAS backends ac
 
 Two improvements would strengthen the eval without changing the methodology:
 
-- **Expand the eval corpus.** Scale from 25 notes / 20 queries to 50+ notes and 40+ queries for stronger statistical signal. The current corpus is sufficient for directional proof but honest about its limits (see [BUILDING.md](BUILDING.md) — "25 notes is honest but small").
+- **Expand the eval corpus.** Scale from 25 notes / 20 queries to 50+ notes and 40+ queries for stronger statistical signal. The current corpus is sufficient for directional proof but honest about its limits (see [BUILDING.md](BUILDING.md) — "25 notes is honest but small"). This is also the gating prerequisite for the embedding-model decision in [ADR-0008](decisions/0008-embedding-model-evaluation.md): at n=20 the sweep cannot distinguish a real 5-point recall gain from noise.
 - **Record a machine fingerprint in `results.json`.** Capture platform, Python version, and onnxruntime version alongside the numbers, so cross-platform embedding determinism can be tracked over time rather than inferred.
+- **Embedding-model sweep follow-ups.** Re-test the BGE/GTE families with asymmetric `query:`/`passage:` prefixes and fix the gte-base harness path (see [ADR-0008](decisions/0008-embedding-model-evaluation.md)). Run with `pip install -e '.[research]'` then `python tests/eval/embedding_sweep.py --list`.

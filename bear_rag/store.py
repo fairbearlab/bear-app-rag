@@ -14,12 +14,21 @@ _COLLECTION_NAME = "bear_notes"
 
 
 class NoteStore:
-    def __init__(self, persist_dir: Path = config.CHROMA_DIR) -> None:
+    def __init__(
+        self,
+        persist_dir: Path = config.CHROMA_DIR,
+        embedding_function=None,
+    ) -> None:
+        # Default to ChromaDB's local ONNX all-MiniLM-L6-v2 (see ADR-0002). The
+        # injection point exists so the eval harness can benchmark alternate
+        # local models (see tests/eval/embedding_sweep.py and ADR-0008); the
+        # production path always uses the pinned default.
+        self._embedding_function = embedding_function or DefaultEmbeddingFunction()
         persist_dir.mkdir(parents=True, exist_ok=True)
         self._client = chromadb.PersistentClient(path=str(persist_dir))
         self._collection = self._client.get_or_create_collection(
             name=_COLLECTION_NAME,
-            embedding_function=DefaultEmbeddingFunction(),
+            embedding_function=self._embedding_function,
         )
 
     # ------------------------------------------------------------------
@@ -47,7 +56,7 @@ class NoteStore:
         self._client.delete_collection(name=_COLLECTION_NAME)
         self._collection = self._client.create_collection(
             name=_COLLECTION_NAME,
-            embedding_function=DefaultEmbeddingFunction(),
+            embedding_function=self._embedding_function,
         )
 
     # ------------------------------------------------------------------
