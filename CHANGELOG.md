@@ -2,6 +2,19 @@
 
 All notable changes to bear-rag will be documented in this file.
 
+## [0.4.0] - 2026-06-29
+
+### Added
+
+- Embedding-model evaluation ([ADR-0008](docs/decisions/0008-embedding-model-evaluation.md)): benchmarked the BGE, GTE, Snowflake Arctic, and Nomic families against the production all-MiniLM-L6-v2 on the existing eval harness and metrics. **Decision: keep MiniLM** — no candidate's gains cleared statistical noise on the n=20 query corpus, and the only directional leader (nomic-embed-text-v1.5) would cost a ~12× disk footprint and a full re-index. Committed the comparison data (`tests/eval/embedding_comparison.json`) and table (`tests/eval/embedding_comparison.md`).
+- `tests/eval/embedding_sweep.py`: a research harness that scores alternate local ONNX embedding models (via `fastembed`) on the same corpus with zero network at inference. Run with `pip install -e '.[research]'` then `python tests/eval/embedding_sweep.py --list`.
+- `research` optional-dependency extra (`fastembed`, Apache-2.0, ONNX-Runtime, no PyTorch). Research-only — not a runtime dependency; the shipped pipeline still uses ChromaDB's bundled ONNX MiniLM (ADR-0002).
+
+### Changed
+
+- `NoteStore` (and the eval harness's `EvalCorpus`) gained an optional `embedding_function` injection point, so alternate local models can be benchmarked. Backward-compatible: the production default is unchanged (ChromaDB's pinned all-MiniLM-L6-v2).
+- ADR-0002 amended to record that the embedding-model choice is now measured against current alternatives, not asserted (see ADR-0008).
+
 ## [0.3.2] - 2026-06-28
 
 ### Added

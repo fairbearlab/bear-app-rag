@@ -15,3 +15,4 @@ Key design decisions in bear-app-rag, documented as they were made.
 | [ADR-0005](0005-incremental-sync-via-timestamps.md) | Core Data timestamps for incremental sync | Phase 2 |
 | [ADR-0006](0006-hand-rolled-eval-framework.md) | Hand-rolled eval with pytest, no eval framework | Phase 3 |
 | [ADR-0007](0007-mit-license.md) | MIT license for maximum adoption | Phase 4 |
+| [ADR-0008](0008-embedding-model-evaluation.md) | Embedding model evaluation: keep all-MiniLM-L6-v2 on the evidence | Phase 5 |

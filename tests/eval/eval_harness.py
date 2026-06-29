@@ -28,12 +28,17 @@ _FIXTURES_DIR = Path(__file__).parent / "fixtures"
 class EvalCorpus:
     """Load synthetic notes, index into NoteStore + SQLite, expose dual retrieval."""
 
-    def __init__(self, tmp_path: Path) -> None:
+    def __init__(self, tmp_path: Path, embedding_function=None) -> None:
         notes_path = _FIXTURES_DIR / "notes.json"
         raw_notes = json.loads(notes_path.read_text())
 
-        # Build BearNote objects and index into NoteStore
-        self.store = NoteStore(persist_dir=tmp_path / "chroma")
+        # Build BearNote objects and index into NoteStore. ``embedding_function``
+        # defaults to None -> NoteStore uses the pinned all-MiniLM-L6-v2 default;
+        # the embedding-model sweep (embedding_sweep.py) passes alternates here.
+        self.store = NoteStore(
+            persist_dir=tmp_path / "chroma",
+            embedding_function=embedding_function,
+        )
         self._titles: dict[int, str] = {}
         self._note_texts: dict[int, str] = {}
 
