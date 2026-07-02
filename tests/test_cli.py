@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from bear_rag.cli import main
 
 
@@ -81,109 +79,6 @@ def test_sync_quiet_prints_when_changes(mock_sync, mock_store_cls, mock_reader_c
 
     captured = capsys.readouterr()
     assert "3" in captured.out
-
-
-# ---------------------------------------------------------------------------
-# ask command — API key guard
-# ---------------------------------------------------------------------------
-
-@patch("bear_rag.cli.BearReader")
-@patch("bear_rag.cli.NoteStore")
-def test_ask_requires_api_key(mock_store_cls, mock_reader_cls, monkeypatch):
-    """bear-rag ask without ANTHROPIC_API_KEY should exit with status 1."""
-    monkeypatch.setattr("sys.argv", ["bear-rag", "ask", "What is Python?"])
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    # main() calls load_dotenv(); stub it so a developer's local .env can't
-    # re-supply the key we just removed (keeps the test hermetic).
-    monkeypatch.setattr("bear_rag.cli.load_dotenv", lambda *a, **k: None)
-
-    with pytest.raises(SystemExit) as exc_info:
-        main()
-
-    assert exc_info.value.code == 1
-
-
-# ---------------------------------------------------------------------------
-# ask command — one-shot mode
-# ---------------------------------------------------------------------------
-
-@patch("bear_rag.cli.BearReader")
-@patch("bear_rag.cli.NoteStore")
-@patch("bear_rag.cli.generate_answer")
-def test_ask_with_question(
-    mock_generate, mock_store_cls, mock_reader_cls, monkeypatch, capsys
-):
-    """bear-rag ask 'question' should query the store and generate once, printing the answer."""
-    monkeypatch.setattr("sys.argv", ["bear-rag", "ask", "What is Python?"])
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-
-    mock_store = MagicMock()
-    mock_store.query.return_value = [MagicMock()]
-    mock_store_cls.return_value = mock_store
-    mock_generate.return_value = "Python is a programming language."
-
-    main()
-
-    mock_store.query.assert_called_once_with(text="What is Python?")
-    mock_generate.assert_called_once()
-    captured = capsys.readouterr()
-    assert "Python is a programming language." in captured.out
-
-
-# ---------------------------------------------------------------------------
-# ask command — REPL mode
-# ---------------------------------------------------------------------------
-
-@patch("bear_rag.cli.BearReader")
-@patch("bear_rag.cli.NoteStore")
-@patch("bear_rag.cli.generate_answer")
-@patch("builtins.input", side_effect=["What is Python?", "What is Rust?", "quit"])
-def test_ask_repl_mode(
-    mock_input,
-    mock_generate,
-    mock_store_cls,
-    mock_reader_cls,
-    monkeypatch,
-):
-    """bear-rag ask (no question) should enter REPL, processing each line until quit."""
-    monkeypatch.setattr("sys.argv", ["bear-rag", "ask"])
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-
-    mock_store = MagicMock()
-    mock_store.query.return_value = [MagicMock()]
-    mock_store_cls.return_value = mock_store
-    mock_generate.return_value = "An answer."
-
-    main()
-
-    assert mock_store.query.call_count == 2
-    assert mock_generate.call_count == 2
-
-
-@patch("bear_rag.cli.BearReader")
-@patch("bear_rag.cli.NoteStore")
-@patch("bear_rag.cli.generate_answer")
-@patch("builtins.input", side_effect=EOFError)
-def test_ask_repl_exits_on_eof(
-    mock_input,
-    mock_generate,
-    mock_store_cls,
-    mock_reader_cls,
-    monkeypatch,
-):
-    """bear-rag ask (no question) REPL should exit cleanly on EOFError (Ctrl+D)."""
-    monkeypatch.setattr("sys.argv", ["bear-rag", "ask"])
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-
-    mock_store = MagicMock()
-    mock_store_cls.return_value = mock_store
-    mock_generate.return_value = "An answer."
-
-    # Should not raise
-    main()
-
-    mock_store.query.assert_not_called()
-    mock_generate.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

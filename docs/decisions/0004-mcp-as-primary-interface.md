@@ -14,7 +14,9 @@ bear-app-rag started as a CLI tool (`bear-rag ask "question"`). But the real val
 
 ## Decision
 
-Build an MCP (Model Context Protocol) server as the primary interface. The CLI remains for admin tasks (index, sync, status) and debugging.
+Build an MCP (Model Context Protocol) server as the primary interface. The CLI is admin-only (`index`, `sync`, `status`) and debugging — it does not generate answers.
+
+**`ask` was retired (2026-07).** Once the MCP server existed, `bear-rag ask` was a second, worse implementation of the same loop: it re-queried the store, re-built a prompt, and called the Anthropic API directly from inside this codebase — the only repo-initiated cloud egress in the whole project. Any MCP-connected agent (Claude Code, Codex CLI, etc.) already does that job better, with structured tool results instead of a hand-rolled prompt, and without requiring a second API key. Removing `ask` deleted `generator.py`, the `anthropic` production dependency, `CLAUDE_MAX_TOKENS`, and `python-dotenv` (its only consumer) — see [ADR-0002](0002-local-onnx-embeddings.md) for the resulting privacy scope and [ADR-0001](0001-no-langchain.md) for the dependency-count effect. `anthropic` remains as a dev-only extra for the eval LLM judge (`tests/eval/eval_harness.py`), which is unrelated to this interface decision.
 
 The MCP server exposes 6 tools: `search_notes`, `read_note`, `list_notes`, `list_tags`, `sync_notes`, and `status`. Each tool has carefully written descriptions that serve as UX copy for AI agents. The descriptions explain what the tool does, when to use it, and what the return format looks like.
 

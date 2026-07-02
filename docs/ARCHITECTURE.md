@@ -12,7 +12,7 @@ Bear SQLite DB ──→ BearReader ──→ Chunker ──→ NoteStore (Chrom
                     timestamps)      aware split)   local vector store)    list, sync)
 ```
 
-Four direct production dependencies: `anthropic`, `chromadb`, `mcp`, `python-dotenv`. Everything else is standard library.
+Two direct production dependencies: `chromadb`, `mcp`. Everything else is standard library. (`anthropic` is a dev-only extra used solely by the eval LLM judge — see below.)
 
 ## Reading Bear's Database
 
@@ -48,7 +48,7 @@ The model produces 384-dimensional vectors. It's smaller than cloud alternatives
 
 ChromaDB's telemetry is disabled at import time via `config.py:os.environ.setdefault('ANONYMIZED_TELEMETRY', 'False')`. ONNX Runtime makes no network calls during inference. On the indexing/embedding/search path the only network call is the one-time ~90MB model download on first use.
 
-The scope of that guarantee is the local retrieval path. Two paths are opt-in and do send note content off the machine: `generator.py` (the `bear-rag ask` command) sends retrieved chunk text to the Anthropic API to draft an answer, but only when `ANTHROPIC_API_KEY` is set; and the MCP server returns retrieved chunks to the connected agent, which is a deliberate trust boundary. Neither is exercised by `index`, `sync`, or `status`.
+The installed package has zero cloud dependency, and this guarantee covers the whole shipped CLI: `index`, `sync`, and `status` never egress. There is one documented, opt-in boundary at runtime: the MCP server returns retrieved chunks to the connected agent, which then generates the answer — a deliberate trust boundary, not a gap in this codebase. Separately, dev-only tooling (the eval LLM judge in `tests/eval/eval_harness.py`) calls the Anthropic API to score retrieval quality; it ships behind the `dev` extra and never runs as part of the installed package.
 
 See [ADR-0002](decisions/0002-local-onnx-embeddings.md) for the full privacy audit.
 

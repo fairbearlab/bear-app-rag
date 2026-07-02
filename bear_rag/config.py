@@ -33,4 +33,3 @@ OVERLAP_WORDS = 40
 # Undated alias (not a dated snapshot) so it keeps resolving after a future
 # snapshot retirement rather than returning a 404.
 CLAUDE_MODEL = "claude-sonnet-4-6"
-CLAUDE_MAX_TOKENS = 4096

@@ -4,7 +4,7 @@ title: "Building a Production RAG Pipeline Without LangChain"
 
 # Building a Production RAG Pipeline Without LangChain
 
-A technical essay on building bear-app-rag: a local-first semantic search system for Bear notes using 4 direct dependencies, zero frameworks, and provable benchmarks.
+A technical essay on building bear-app-rag: a local-first semantic search system for Bear notes using 2 direct dependencies, zero frameworks, and provable benchmarks.
 
 ## Why I Built This
 
@@ -23,11 +23,9 @@ What you actually want is semantic search. "What did I write about focus and pro
 Every RAG tutorial starts with `pip install langchain`. Here's what you get:
 
 ```
-bear-app-rag (4 direct dependencies):
-  anthropic
+bear-app-rag (2 direct dependencies):
   chromadb
   mcp
-  python-dotenv
 
 Typical LangChain RAG setup (4 direct + 50+ transitive):
   langchain
@@ -39,13 +37,12 @@ Typical LangChain RAG setup (4 direct + 50+ transitive):
 
 LangChain wraps every library in an abstraction layer. You don't call ChromaDB. You call LangChain's ChromaDB wrapper, which calls ChromaDB. When something breaks, you debug through 6 layers of stack traces to find out that the underlying library just needed a different parameter.
 
-The entire bear-app-rag pipeline is four operations:
+The entire bear-app-rag pipeline is three operations:
 1. Read SQLite
 2. Chunk text
-3. Embed into vectors
-4. Query them
+3. Embed into vectors, and let the MCP server query them for the connected agent
 
-That's four libraries, not a framework. The total production code is ~900 lines across 9 modules. Every line is debuggable. Every dependency is direct and justified.
+That's two libraries, not a framework. (`anthropic` is a dev-only extra for the eval LLM judge — never installed with the package.) The total production code is ~900 lines across 9 modules. Every line is debuggable. Every dependency is direct and justified.
 
 See [ADR-0001](decisions/0001-no-langchain.md) for the full reasoning.
 
@@ -106,7 +103,7 @@ class NoteStore:
         )
 ```
 
-The privacy guarantee: your notes never leave the machine during indexing, embedding, or search. The only network call on that path is that initial model download, and we disable ChromaDB's telemetry at import time. Two paths are opt-in and do send note content off the machine: `bear-rag ask` posts retrieved chunks to the Anthropic API when `ANTHROPIC_API_KEY` is set (Step 4 below), and the MCP server hands retrieved chunks to the connected agent.
+The privacy guarantee: the installed package never leaves the machine during indexing, embedding, sync, or search. The only network call on that path is that initial model download, and we disable ChromaDB's telemetry at import time. There is one documented, opt-in boundary: the MCP server hands retrieved chunks to the connected agent (Step 4 below), which then generates the answer — a deliberate trust boundary, not a gap. Separately, dev-only tooling (the eval LLM judge) calls the Anthropic API to score retrieval quality; it's behind the `dev` extra and never ships with the package.
 
 The model produces 384-dimensional vectors. Cloud embedding APIs (OpenAI's text-embedding-3-small) produce 1536 dimensions. At personal-note scale, the quality difference doesn't matter. The privacy guarantee does.
 

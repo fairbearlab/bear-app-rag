@@ -283,17 +283,16 @@ wheels = [
 
 [[package]]
 name = "bear-rag"
-version = "0.3.2"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
-    { name = "anthropic" },
     { name = "chromadb" },
     { name = "mcp" },
-    { name = "python-dotenv" },
 ]
 
 [package.optional-dependencies]
 dev = [
+    { name = "anthropic" },
     { name = "pytest" },
     { name = "pytest-socket" },
 ]
@@ -303,13 +302,12 @@ research = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.49,<1.0" },
+    { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.49,<1.0" },
     { name = "chromadb", specifier = ">=1.0,<2.0" },
     { name = "fastembed", marker = "extra == 'research'", specifier = ">=0.4,<1.0" },
     { name = "mcp", specifier = ">=1.0,<2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0,<10.0" },
     { name = "pytest-socket", marker = "extra == 'dev'", specifier = ">=0.8.0" },
-    { name = "python-dotenv", specifier = ">=1.0,<2.0" },
 ]
 provides-extras = ["dev", "research"]
 
