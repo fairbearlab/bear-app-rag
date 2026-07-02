@@ -18,11 +18,92 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from bear_rag import config
+from bear_rag.bear_reader import BearReader
 from bear_rag.chunker import chunk_note
 from bear_rag.models import BearNote, Chunk
 from bear_rag.store import NoteStore
 
 _FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+_CORE_DATA_EPOCH = datetime(2001, 1, 1, tzinfo=timezone.utc)
+
+
+def _datetime_to_core_data(dt: datetime) -> float:
+    """Convert a datetime to a Core Data timestamp (seconds since 2001-01-01 UTC).
+
+    Mirrors ``tests/conftest.py``'s helper of the same purpose -- duplicated
+    (rather than importing bear_reader's underscore-prefixed private helper)
+    so this module doesn't reach into another module's internals.
+    """
+    return (dt - _CORE_DATA_EPOCH).total_seconds()
+
+
+def _build_bear_fixture_db(db_path: Path, raw_notes: list[dict]) -> None:
+    """Build a Bear-schema SQLite database (ZSFNOTE/ZSFNOTETAG/Z_5TAGS) from
+    *raw_notes* -- the same records loaded from fixtures/notes.json.
+
+    Mirrors the minimal schema ``tests/conftest.py``'s ``bear_db`` fixture
+    builds, generalized to the eval corpus's full note set (rather than a
+    fixed set of five) so tag-filtered eval cases can run end-to-end through
+    ``BearReader`` / ``mcp_server.search_notes`` instead of the
+    ``store.query()`` path directly (D11) -- tag->pk resolution moves out of
+    the store in T4, so exercising the store alone can't gate that.
+    """
+    conn = sqlite3.connect(str(db_path))
+    cur = conn.cursor()
+    cur.execute(
+        """
+        CREATE TABLE ZSFNOTE (
+            Z_PK INTEGER PRIMARY KEY,
+            ZTITLE TEXT,
+            ZTEXT TEXT,
+            ZMODIFICATIONDATE REAL,
+            ZTRASHED INTEGER DEFAULT 0,
+            ZARCHIVED INTEGER DEFAULT 0
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE ZSFNOTETAG (
+            Z_PK INTEGER PRIMARY KEY,
+            ZTITLE TEXT
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE Z_5TAGS (
+            Z_5NOTES INTEGER,
+            Z_13TAGS INTEGER
+        )
+        """
+    )
+
+    tag_pks: dict[str, int] = {}
+    note_rows: list[tuple] = []
+    tag_rows: list[tuple[int, str]] = []
+    join_rows: list[tuple[int, int]] = []
+    for n in raw_notes:
+        modified_at = datetime.fromisoformat(n["modified_at"]).replace(tzinfo=timezone.utc)
+        note_rows.append(
+            (n["pk"], n["title"], n["text"], _datetime_to_core_data(modified_at), 0, 0)
+        )
+        for tag in n.get("tags", []):
+            if tag not in tag_pks:
+                tag_pks[tag] = len(tag_pks) + 1
+                tag_rows.append((tag_pks[tag], tag))
+            join_rows.append((n["pk"], tag_pks[tag]))
+
+    cur.executemany(
+        "INSERT INTO ZSFNOTE (Z_PK, ZTITLE, ZTEXT, ZMODIFICATIONDATE, ZTRASHED, ZARCHIVED) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        note_rows,
+    )
+    cur.executemany("INSERT INTO ZSFNOTETAG (Z_PK, ZTITLE) VALUES (?, ?)", tag_rows)
+    cur.executemany("INSERT INTO Z_5TAGS (Z_5NOTES, Z_13TAGS) VALUES (?, ?)", join_rows)
+    conn.commit()
+    conn.close()
 
 
 class EvalCorpus:
@@ -71,6 +152,13 @@ class EvalCorpus:
             [(n["pk"], n["title"], n["text"]) for n in raw_notes],
         )
         self._db.commit()
+
+        # Bear-schema fixture DB + reader, for tag-filtered eval cases that
+        # must run end-to-end through mcp_server.search_notes (D11) rather
+        # than the store.query() path directly.
+        bear_db_path = tmp_path / "bear_fixture.sqlite"
+        _build_bear_fixture_db(bear_db_path, raw_notes)
+        self.reader = BearReader(bear_db_path)
 
     def get_title(self, pk: int) -> str:
         return self._titles.get(pk, f"<unknown pk={pk}>")
@@ -126,6 +214,28 @@ class EvalCorpus:
             if pk in self._note_texts:
                 texts.append(self._note_texts[pk])
         return " ".join(texts)
+
+    def search_via_mcp(
+        self, query: str, tags: list[str] | None = None, limit: int = 10
+    ) -> list[dict]:
+        """Run *query* end-to-end through ``mcp_server.search_notes``.
+
+        Injects this corpus's reader/store into the ``mcp_server`` module
+        globals -- the same injection pattern ``tests/test_mcp_server.py``
+        uses (see D11) -- so tag filtering is exercised exactly as a
+        connected agent would see it, not via a direct ``store.query()``
+        call. Restores whatever was previously injected afterward, in case
+        this corpus shares a process with another test module.
+        """
+        from bear_rag import mcp_server
+
+        prev_reader, prev_store = mcp_server._reader, mcp_server._store
+        mcp_server._reader = self.reader
+        mcp_server._store = self.store
+        try:
+            return mcp_server.search_notes(query, tags=tags, limit=limit)
+        finally:
+            mcp_server._reader, mcp_server._store = prev_reader, prev_store
 
 
 def _tokenize_query(query: str) -> list[str]:

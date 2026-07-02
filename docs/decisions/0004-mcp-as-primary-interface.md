@@ -22,6 +22,12 @@ The MCP server exposes 6 tools: `search_notes`, `read_note`, `list_notes`, `list
 
 The server runs over stdio (local-only, no network transport) and reads the Bear database in read-only mode (`?mode=ro`).
 
+### Tag-filtered search: snapshot semantics
+
+`search_notes(query, tags=[...])` resolves tag membership from **live** Bear SQL (`BearReader.note_pks_for_tags` over the `Z_5TAGS`/`ZSFNOTETAG` joins — uncapped, trashed- and archived-excluding, D14), then restricts the vector search to those note PKs via ChromaDB's native `{"note_pk": {"$in": [...]}}` filter. `NoteStore.query()` stays a pure vector layer with no knowledge of tags or the reader (D2). If tag resolution yields no PKs, the tool short-circuits to `[]` rather than passing an empty `$in` (which Chroma treats as a no-op, silently returning unfiltered results — D4).
+
+This means the two halves of a tag-filtered result come from different sources: the *membership* (which notes match the tags) is live, while the *content* (the chunk excerpts) comes from the last-indexed snapshot. A tag added or removed in Bear since the last sync is honored by the filter immediately, but the chunk text still reflects the snapshot. The gap only matters for tag edits since the last sync and self-heals on the next `sync`.
+
 ## Alternatives Considered
 
 **REST API:** Standard, well-understood. But requires a running server process, port management, and authentication. Adds operational complexity for what's fundamentally a local tool. AI agents like Claude Code can't natively call REST endpoints during conversation.

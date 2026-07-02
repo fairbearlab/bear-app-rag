@@ -269,7 +269,7 @@ class TestEvalRetrieval:
     def test_results_artifact_written(self, eval_results):
         assert _RESULTS_PATH.exists()
         data = json.loads(_RESULTS_PATH.read_text())
-        assert len(data["queries"]) == 20
+        assert len(data["queries"]) == 23
         assert "aggregates" in data
 
     def test_benchmark_md_written(self, eval_results):
@@ -286,6 +286,67 @@ class TestEvalRetrieval:
         assert em["recall_like"] > 0.0, (
             "LIKE recall should be non-zero on exact match queries"
         )
+
+
+# ------------------------------------------------------------------
+# Tag-filtered search -- end-to-end through mcp_server.search_notes (D7/D11)
+# ------------------------------------------------------------------
+
+
+def _tag_cases(all_queries: list[dict], case_type: str) -> list[dict]:
+    """Tag-bearing eval cases of *case_type* (single / multi-tag OR / no-match)."""
+    return [q for q in all_queries if q.get("tags") is not None and q["type"] == case_type]
+
+
+@pytest.mark.eval
+class TestTagFilteredSearch:
+    """Tag eval cases run end-to-end through mcp_server.search_notes (D11).
+
+    Exercising store.query() directly can't gate this: tag->pk resolution
+    moves out of the store in T4 (a dedicated BearReader method), so only a
+    real search_notes() call sees the resolver. Assertions here are D4/D16's
+    real gate -- recall_at_k/mrr return 1.0 on an empty expected_note_pks, so
+    they structurally cannot catch a {"$in": []}-style bug that silently
+    returns everything instead of nothing. If these go red pending T4's
+    resolver landing, that's expected; the store-level $contains path these
+    currently exercise (pre-T4) should already satisfy them.
+    """
+
+    def test_single_tag_precision(self, corpus, queries):
+        """Single-tag filter: every returned pk must belong to the tag's universe."""
+        cases = _tag_cases(queries, "tag_single")
+        assert cases, "fixture must include a single-tag case"
+        for q in cases:
+            results = corpus.search_via_mcp(q["query"], tags=q["tags"], limit=20)
+            universe = set(q["expected_note_pks"])
+            returned_pks = {r["note_pk"] for r in results}
+            assert returned_pks <= universe, (
+                f"{q['id']}: returned pks {returned_pks} are not a subset of "
+                f"the tag's pk universe {universe}"
+            )
+
+    def test_multi_tag_or_precision(self, corpus, queries):
+        """Multi-tag OR filter: every returned pk must belong to the union of universes."""
+        cases = _tag_cases(queries, "tag_multi_or")
+        assert cases, "fixture must include a multi-tag OR case"
+        for q in cases:
+            results = corpus.search_via_mcp(q["query"], tags=q["tags"], limit=20)
+            universe = set(q["expected_note_pks"])
+            returned_pks = {r["note_pk"] for r in results}
+            assert returned_pks <= universe, (
+                f"{q['id']}: returned pks {returned_pks} are not a subset of "
+                f"the tag OR universe {universe}"
+            )
+
+    def test_no_match_tag_returns_empty(self, corpus, queries):
+        """D16's negative assertion: a tag with zero pks must yield zero results,
+        never fall back to the unfiltered {"$in": []} behavior."""
+        cases = _tag_cases(queries, "tag_no_match")
+        assert cases, "fixture must include a no-match tag case"
+        for q in cases:
+            assert q["expected_note_pks"] == []
+            results = corpus.search_via_mcp(q["query"], tags=q["tags"], limit=20)
+            assert len(results) == 0
 
 
 # ------------------------------------------------------------------

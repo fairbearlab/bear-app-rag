@@ -37,14 +37,14 @@
         "Tokyo Food Markets",
         "Weekly Reflection - January 15"
       ],
+      "semantic_text_sha": "81cecc6beb8c535e32da4003db97eee97a982ac403d497bfaa406a090e3a825c",
+      "like_text_sha": "bf045e04f919c3a9704cf2150865eb254636893567531dcfbff60ccb6ec7ce9b",
       "recall_semantic": 0.6666666666666666,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.8,
-      "llm_judge_like": 0.7
+      "groundedness_like": 1.0
     },
     {
       "id": "q2",
@@ -81,14 +81,14 @@
         "Database Migration Strategies",
         "Debugging Memory Leaks"
       ],
+      "semantic_text_sha": "6c14a590aab68fe9150ae280a02d886a7f1c757782c74c7c4ea7f6229b4cb6d8",
+      "like_text_sha": "42f2100a6855eaae17181a0d48011fba91c08acf6d16496f14b33020035e5897",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 0.5,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.7,
-      "llm_judge_like": 0.3
+      "groundedness_like": 1.0
     },
     {
       "id": "q3",
@@ -126,14 +126,14 @@
         "Atomic Habits - Key Takeaways",
         "The Pragmatic Programmer - Notes"
       ],
+      "semantic_text_sha": "70520d901152be1ef27a66602c710fe171bb90bb5313e7b84eb2e6eafe62b395",
+      "like_text_sha": "b4444b42ae9da32397c941c6028cc121386aa99260fa92f8f398309da1e6477c",
       "recall_semantic": 1.0,
       "recall_like": 0.5,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 0.8333333333333334,
-      "llm_judge_semantic": 0.72,
-      "llm_judge_like": 0.72
+      "groundedness_like": 0.8333333333333334
     },
     {
       "id": "q4",
@@ -171,14 +171,14 @@
         "Road Trip Planning Checklist",
         "Thinking Fast and Slow - Reading Notes"
       ],
+      "semantic_text_sha": "76ac941a989fb82628ee17b24f774a3718a201e47a4cf16552cf73d14b02bf81",
+      "like_text_sha": "a3ad62033f2918d995a7b71aec3e011be84903bb54e5f9510b04837be17f8c3b",
       "recall_semantic": 0.5,
       "recall_like": 0.0,
       "mrr_semantic": 1.0,
       "mrr_like": 0.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 0.0,
-      "llm_judge_semantic": 0.7,
-      "llm_judge_like": 0.05
+      "groundedness_like": 0.0
     },
     {
       "id": "q5",
@@ -215,14 +215,14 @@
         "Home Office Ergonomics",
         "Budget Backpacking Southeast Asia"
       ],
+      "semantic_text_sha": "415f7203b10949a8b6858ecd33fe562ec4b7c49ad2a69c61460d449a6e482806",
+      "like_text_sha": "a637d7f623ad5a30c212b32b2fb67d389018e3c5b4f150ebdc170db891ed4c7e",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 0.6666666666666666,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.5,
-      "llm_judge_like": 0.7
+      "groundedness_like": 1.0
     },
     {
       "id": "q6",
@@ -257,14 +257,14 @@
         "Digital Nomad Setup in Lisbon",
         "Thinking Fast and Slow - Reading Notes"
       ],
+      "semantic_text_sha": "de86fb09f79ea1ea7989e2456571d1cbda6e05517a9e38bc5d798ddcbc0c6926",
+      "like_text_sha": "206ba568abdb8c517937c76225b36deebd5d69258adbc0d7f651b2ae181dbb70",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 0.2,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.8,
-      "llm_judge_like": 0.9
+      "groundedness_like": 1.0
     },
     {
       "id": "q7",
@@ -301,14 +301,14 @@
         "Hiking the Pacific Crest Trail",
         "Thinking Fast and Slow - Reading Notes"
       ],
+      "semantic_text_sha": "4d3a2447f16a2be58de1a84bc449e9454a72385c9ac0f87539026023701de55e",
+      "like_text_sha": "4511e89e33040c75844cd4ab1cea2a2c607e021697106d472a2dbb7e0588ac05",
       "recall_semantic": 1.0,
       "recall_like": 0.0,
       "mrr_semantic": 0.5,
       "mrr_like": 0.0,
       "groundedness_semantic": 0.3333333333333333,
-      "groundedness_like": 0.3333333333333333,
-      "llm_judge_semantic": 0.3,
-      "llm_judge_like": 0.0
+      "groundedness_like": 0.3333333333333333
     },
     {
       "id": "q8",
@@ -345,14 +345,14 @@
         "API Design Best Practices",
         "Tokyo Food Markets"
       ],
+      "semantic_text_sha": "fc96d9c565ab8491359510d91f85e8f65e317bfb11e1c7cbf9fb2c1de428cfb2",
+      "like_text_sha": "d7cc68fa1c10564dd1975fcb9088eb90e7cc298f043eb4a7a889c530e4ef7b8d",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.9,
-      "llm_judge_like": 0.9
+      "groundedness_like": 1.0
     },
     {
       "id": "q9",
@@ -389,14 +389,14 @@
         "Thinking Fast and Slow - Reading Notes",
         "The Design of Everyday Things - Summary"
       ],
+      "semantic_text_sha": "0fa3c96e3dc0c40b65b517e65a3ff7f0abc520379da582aed05ba0492d388136",
+      "like_text_sha": "58b9c1dd827b28917e92a00b1f22b9849dd425c96f3238bf4937d85c72dc2b31",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 0.8333333333333334,
-      "llm_judge_semantic": 0.9,
-      "llm_judge_like": 0.97
+      "groundedness_like": 0.8333333333333334
     },
     {
       "id": "q10",
@@ -433,14 +433,14 @@
         "Thinking Fast and Slow - Reading Notes",
         "Deep Work - Reflections"
       ],
+      "semantic_text_sha": "a7493e2baecaef1c14fc3ced9d03deff0390d4b91c42baf37e578bc27ba82b80",
+      "like_text_sha": "fcdc1b891a28e664cc0d40c332a4cd25dcdfbfc03ada5e1b6c8c91cc04c80af3",
       "recall_semantic": 1.0,
       "recall_like": 0.0,
       "mrr_semantic": 0.3333333333333333,
       "mrr_like": 0.0,
       "groundedness_semantic": 0.8333333333333334,
-      "groundedness_like": 0.16666666666666666,
-      "llm_judge_semantic": 0.72,
-      "llm_judge_like": 0.0
+      "groundedness_like": 0.16666666666666666
     },
     {
       "id": "q11",
@@ -479,14 +479,14 @@
         "Weekly Reflection - January 15",
         "Learning Rust - Week 3"
       ],
+      "semantic_text_sha": "624156ceac89db4fe916f578676b768c0ca1108af513a1e567a2cc8c049e2047",
+      "like_text_sha": "bd16405efbb395ebf69ea4fd0505ceb9abf0af188d13cbe37ca269e089126b53",
       "recall_semantic": 0.6666666666666666,
       "recall_like": 0.6666666666666666,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 0.5714285714285714,
-      "groundedness_like": 0.5714285714285714,
-      "llm_judge_semantic": 0.7,
-      "llm_judge_like": 0.55
+      "groundedness_like": 0.5714285714285714
     },
     {
       "id": "q12",
@@ -525,14 +525,14 @@
         "Fermented Foods Guide",
         "Budget Backpacking Southeast Asia"
       ],
+      "semantic_text_sha": "864bcb61d21fe9ac32ac58518631cb88c093472a99fdfa03f38646e67c2dc4cf",
+      "like_text_sha": "21c2472d5dab95f60a15128da30a1dc5fd399a68dcf8aca96ede149ef4a2ec5e",
       "recall_semantic": 1.0,
       "recall_like": 0.3333333333333333,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 0.6666666666666666,
-      "llm_judge_semantic": 0.8,
-      "llm_judge_like": 0.4
+      "groundedness_like": 0.6666666666666666
     },
     {
       "id": "q13",
@@ -571,14 +571,14 @@
         "The Design of Everyday Things - Summary",
         "Database Migration Strategies"
       ],
+      "semantic_text_sha": "fcf2b1d3065e10573e7305aeffc7053b045b7767b91ad8171d216ece75a6fa7d",
+      "like_text_sha": "cfedcc81481c21aa9e43a027220f26dbf83c8c9b4dfaa5e082ab7c4f6d8b986a",
       "recall_semantic": 1.0,
       "recall_like": 0.6666666666666666,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 0.5,
-      "groundedness_like": 0.6666666666666666,
-      "llm_judge_semantic": 0.3,
-      "llm_judge_like": 0.62
+      "groundedness_like": 0.6666666666666666
     },
     {
       "id": "q14",
@@ -617,14 +617,14 @@
         "Deploying Python Apps to Production",
         "Weekly Reflection - January 15"
       ],
+      "semantic_text_sha": "21d7752c30d481a3550d8b591831b706244f9aa41ba8701aea0a95e945ed8167",
+      "like_text_sha": "4f00f3c48522c814c8775177d388c65837a29bd1c2903f7bf611084d37af57b6",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.82,
-      "llm_judge_like": 0.9
+      "groundedness_like": 1.0
     },
     {
       "id": "q15",
@@ -662,14 +662,14 @@
         "Fermented Foods Guide",
         "Budget Backpacking Southeast Asia"
       ],
+      "semantic_text_sha": "33a4847d872cf9d8f2974ccba1702a28f67c854bd73282f49531e55bcd829075",
+      "like_text_sha": "eeab8f1efe9b1c3defe358541a9373cf3d5f6299015eeeba91b9d2bb9608e2ed",
       "recall_semantic": 0.5,
       "recall_like": 1.0,
       "mrr_semantic": 0.2,
       "mrr_like": 0.5,
       "groundedness_semantic": 0.3333333333333333,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.1,
-      "llm_judge_like": 0.7
+      "groundedness_like": 1.0
     },
     {
       "id": "q16",
@@ -700,14 +700,14 @@
         "Sourdough Bread Baking",
         "Fermented Foods Guide"
       ],
+      "semantic_text_sha": "463516487a08fc981e3fb51a604fb0cb02e63a1e9cd31a845223012a04dce5ef",
+      "like_text_sha": "91be072f6357c764c5fcc1ab3e50cdd16e121c0b2efc186a91cc0a7b8c273c25",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.8,
-      "llm_judge_like": 0.8
+      "groundedness_like": 1.0
     },
     {
       "id": "q17",
@@ -744,14 +744,14 @@
         "Atomic Habits - Key Takeaways",
         "Deep Work - Reflections"
       ],
+      "semantic_text_sha": "896ee2c2c8da564c7b73ce6c7152fd70115c758e0bf960e8c9b3679aa72b4344",
+      "like_text_sha": "fa1eff03326c8c7e2bfd9d3b2fabedfdff5da872e57189209044ddcf08da034a",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.85,
-      "llm_judge_like": 1.0
+      "groundedness_like": 1.0
     },
     {
       "id": "q18",
@@ -788,14 +788,14 @@
         "Learning Rust - Week 3",
         "Thai Green Curry Recipe"
       ],
+      "semantic_text_sha": "d6dad61558850730178c5229641060ebb9762483e140b553073ef7de575c0b7f",
+      "like_text_sha": "926ade3356dbe8baae371b748a821f995b81a120b81aaad94babe9f3d7cdbe14",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.9,
-      "llm_judge_like": 0.97
+      "groundedness_like": 1.0
     },
     {
       "id": "q19",
@@ -828,14 +828,14 @@
         "Sourdough Bread Baking",
         "App Idea: Recipe Ingredient Tracker"
       ],
+      "semantic_text_sha": "d4b87da1115eaf2170b86f83566738b36c3b2c6f5714d469ca87efe9ea39687f",
+      "like_text_sha": "03ffff6bd0c186ad01e01196ab7ed9f7fd717738826acc9dea7e536eabbdbe37",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.95,
-      "llm_judge_like": 0.95
+      "groundedness_like": 1.0
     },
     {
       "id": "q20",
@@ -872,27 +872,151 @@
         "Budget Backpacking Southeast Asia",
         "Tokyo Food Markets"
       ],
+      "semantic_text_sha": "c007f709df7a2d6f73acb8c52a6f3b4c137bb89bbbd4f112de5ae41960f9cfc5",
+      "like_text_sha": "a79e77b589d7499146122e55a3f084e5e1d00b2fe95ab364a61d2a5e486a8dc4",
       "recall_semantic": 1.0,
       "recall_like": 1.0,
       "mrr_semantic": 1.0,
       "mrr_like": 1.0,
       "groundedness_semantic": 1.0,
-      "groundedness_like": 1.0,
-      "llm_judge_semantic": 0.9,
-      "llm_judge_like": 0.95
+      "groundedness_like": 1.0
+    },
+    {
+      "id": "q21",
+      "query": "budget-friendly recipes for home cooking",
+      "type": "tag_single",
+      "expected_note_pks": [
+        1,
+        2,
+        3
+      ],
+      "semantic_pks": [
+        3,
+        22,
+        21,
+        10,
+        6
+      ],
+      "like_pks": [
+        3,
+        10,
+        21,
+        22,
+        24
+      ],
+      "semantic_titles": [
+        "Meal Prep for Busy Weeks",
+        "App Idea: Recipe Ingredient Tracker",
+        "Weekly Reflection - January 15",
+        "Digital Nomad Setup in Lisbon",
+        "Budget Backpacking Southeast Asia"
+      ],
+      "like_titles": [
+        "Meal Prep for Busy Weeks",
+        "Digital Nomad Setup in Lisbon",
+        "Weekly Reflection - January 15",
+        "App Idea: Recipe Ingredient Tracker",
+        "Home Office Ergonomics"
+      ],
+      "semantic_text_sha": "c162d50901b694e5db9b499f3010efb9118763eba2edd19809bd4ac9dbb9a1e1",
+      "like_text_sha": "8c0f3556cfbd861030ec6ebb65479ba912650ce1a648fba2a3fe5f0e592fa180",
+      "recall_semantic": 0.3333333333333333,
+      "recall_like": 0.3333333333333333,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 0.6666666666666666,
+      "groundedness_like": 0.6666666666666666
+    },
+    {
+      "id": "q22",
+      "query": "fermentation projects and long-distance hiking",
+      "type": "tag_multi_or",
+      "expected_note_pks": [
+        2,
+        5,
+        7
+      ],
+      "semantic_pks": [
+        7,
+        5,
+        2,
+        9,
+        6
+      ],
+      "like_pks": [
+        7,
+        6,
+        17,
+        1,
+        2
+      ],
+      "semantic_titles": [
+        "Hiking the Pacific Crest Trail",
+        "Fermented Foods Guide",
+        "Sourdough Bread Baking",
+        "Road Trip Planning Checklist",
+        "Budget Backpacking Southeast Asia"
+      ],
+      "like_titles": [
+        "Hiking the Pacific Crest Trail",
+        "Budget Backpacking Southeast Asia",
+        "Database Migration Strategies",
+        "Thai Green Curry Recipe",
+        "Sourdough Bread Baking"
+      ],
+      "semantic_text_sha": "59936e268b041d4abe31f386248cf4bfe865c8207672bcdce6e6398b2144ef3e",
+      "like_text_sha": "395419a33b9133b92cfbbdc8a489f1642933ad09de5c507f219271c992fb5e74",
+      "recall_semantic": 1.0,
+      "recall_like": 0.6666666666666666,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 0.6666666666666666
+    },
+    {
+      "id": "q23",
+      "query": "anything at all",
+      "type": "tag_no_match",
+      "expected_note_pks": [],
+      "semantic_pks": [
+        7,
+        9,
+        12,
+        17,
+        20
+      ],
+      "like_pks": [
+        17
+      ],
+      "semantic_titles": [
+        "Hiking the Pacific Crest Trail",
+        "Road Trip Planning Checklist",
+        "The Design of Everyday Things - Summary",
+        "Database Migration Strategies",
+        "Code Review Checklist"
+      ],
+      "like_titles": [
+        "Database Migration Strategies"
+      ],
+      "semantic_text_sha": "0d479e4056e6e44a365170a91925881ccf7553f4471abf1a93cc891c6a20d181",
+      "like_text_sha": "96301e0160bf5b63a89878a8047fcdc9727a06bf4fc6cf227d92a581055669a7",
+      "recall_semantic": 1.0,
+      "recall_like": 1.0,
+      "mrr_semantic": 1.0,
+      "mrr_like": 1.0,
+      "groundedness_semantic": 1.0,
+      "groundedness_like": 1.0
     }
   ],
   "aggregates": {
     "overall": {
-      "count": 20,
-      "recall_semantic": 0.9167,
-      "recall_like": 0.7583,
-      "mrr_semantic": 0.9017,
-      "mrr_like": 0.76,
-      "groundedness_semantic": 0.8619,
-      "groundedness_like": 0.8036,
-      "llm_judge_semantic": 0.708,
-      "llm_judge_like": 0.654
+      "count": 23,
+      "recall_semantic": 0.8986,
+      "recall_like": 0.7464,
+      "mrr_semantic": 0.9145,
+      "mrr_like": 0.7913,
+      "groundedness_semantic": 0.8654,
+      "groundedness_like": 0.8002
     },
     "by_type": {
       "exact_match": {
@@ -902,9 +1026,7 @@
         "mrr_semantic": 1.0,
         "mrr_like": 1.0,
         "groundedness_semantic": 1.0,
-        "groundedness_like": 1.0,
-        "llm_judge_semantic": 0.88,
-        "llm_judge_like": 0.934
+        "groundedness_like": 1.0
       },
       "multi_concept": {
         "count": 5,
@@ -913,9 +1035,7 @@
         "mrr_semantic": 0.84,
         "mrr_like": 0.9,
         "groundedness_semantic": 0.681,
-        "groundedness_like": 0.781,
-        "llm_judge_semantic": 0.544,
-        "llm_judge_like": 0.634
+        "groundedness_like": 0.781
       },
       "paraphrase": {
         "count": 5,
@@ -924,9 +1044,7 @@
         "mrr_semantic": 0.7667,
         "mrr_like": 0.44,
         "groundedness_semantic": 0.8333,
-        "groundedness_like": 0.6667,
-        "llm_judge_semantic": 0.724,
-        "llm_judge_like": 0.554
+        "groundedness_like": 0.6667
       },
       "synonym": {
         "count": 5,
@@ -935,9 +1053,34 @@
         "mrr_semantic": 1.0,
         "mrr_like": 0.7,
         "groundedness_semantic": 0.9333,
-        "groundedness_like": 0.7667,
-        "llm_judge_semantic": 0.684,
-        "llm_judge_like": 0.494
+        "groundedness_like": 0.7667
+      },
+      "tag_multi_or": {
+        "count": 1,
+        "recall_semantic": 1.0,
+        "recall_like": 0.6667,
+        "mrr_semantic": 1.0,
+        "mrr_like": 1.0,
+        "groundedness_semantic": 1.0,
+        "groundedness_like": 0.6667
+      },
+      "tag_no_match": {
+        "count": 1,
+        "recall_semantic": 1.0,
+        "recall_like": 1.0,
+        "mrr_semantic": 1.0,
+        "mrr_like": 1.0,
+        "groundedness_semantic": 1.0,
+        "groundedness_like": 1.0
+      },
+      "tag_single": {
+        "count": 1,
+        "recall_semantic": 0.3333,
+        "recall_like": 0.3333,
+        "mrr_semantic": 1.0,
+        "mrr_like": 1.0,
+        "groundedness_semantic": 0.6667,
+        "groundedness_like": 0.6667
       }
     }
   }

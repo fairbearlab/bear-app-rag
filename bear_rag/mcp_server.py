@@ -5,26 +5,41 @@ Read-only: Bear SQLite accessed via ?mode=ro URI.
 """
 
 import functools
+import logging
 
 from mcp.server.fastmcp import FastMCP
 
-from bear_rag import config
 from bear_rag.bear_reader import BearReader
+from bear_rag.status import get_status
 from bear_rag.store import NoteStore
 from bear_rag.sync import sync as run_sync
 
+logger = logging.getLogger(__name__)
+
 
 def _handle_errors(func):
-    """Decorator that catches known exceptions and returns structured error dicts."""
+    """Decorator that catches known exceptions and returns structured error dicts.
+
+    Responses returned to the connected agent are intentionally generic: they
+    must never embed local filesystem paths (which can leak the machine's
+    username/home directory) or raw exception text (which can mask real bugs
+    behind a confusing agent-facing message). Full detail — including the
+    original exception and, for unexpected errors, a full traceback — is
+    logged server-side only.
+    """
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except FileNotFoundError as exc:
-            return {"error": f"Bear database not found: {exc}"}
+            logger.error("Bear database not found: %s", exc)
+            return {"error": "Bear database not found. Is Bear installed?"}
         except ValueError as exc:
             return {"error": f"Invalid input: {exc}"}
+        except Exception:
+            logger.exception("Unexpected error in %s", func.__name__)
+            return {"error": "Internal error (see server logs)"}
 
     return wrapper
 
@@ -55,15 +70,27 @@ def search_notes(query: str, tags: list[str] | None = None, limit: int = 10) -> 
 
     Use this to discover notes relevant to a topic. Returns ranked chunks
     (excerpts) with metadata. For full note text, follow up with read_note.
+
+    When *tags* are given, results are restricted to notes carrying any of them
+    (OR semantics), excluding trashed and archived notes. Snapshot semantics:
+    tag membership is resolved from *live* Bear SQL while chunk content comes
+    from the indexed snapshot. A tag edited in Bear since the last sync can
+    therefore filter against membership the index hasn't caught up to yet; the
+    gap only affects tag edits since the last sync and self-heals on the next
+    sync (see ADR-0004).
     """
     store = _get_store()
 
     where = None
     if tags:
-        if len(tags) == 1:
-            where = {"tags": {"$contains": "," + tags[0] + ","}}
-        else:
-            where = {"$or": [{"tags": {"$contains": "," + t + ","}} for t in tags]}
+        reader = _get_reader()
+        pks = reader.note_pks_for_tags(tags)
+        # D4: a tag that resolves to no notes must short-circuit to an empty
+        # result. Never pass {"$in": []} to Chroma — an empty list is a no-op
+        # filter there, silently returning unfiltered matches.
+        if not pks:
+            return []
+        where = {"note_pk": {"$in": sorted(pks)}}
 
     chunks = store.query(text=query, n_results=limit, where=where)
     return [
@@ -86,7 +113,9 @@ def read_note(title: str) -> dict:
     """Get the full text of a specific Bear note by title (case-insensitive).
 
     Use this after search_notes when you need the complete note content,
-    not just a chunk excerpt.
+    not just a chunk excerpt. Unlike search_notes/list_notes/list_tags, this is
+    a deliberate direct fetch that can still return an *archived* note; the
+    returned ``is_archived`` flag lets the caller mirror Bear's UX (D17).
     """
     reader = _get_reader()
     note = reader.read_note_by_title(title)
@@ -97,6 +126,7 @@ def read_note(title: str) -> dict:
         "text": note.text,
         "tags": note.tags,
         "modified_at": note.modified_at.isoformat(),
+        "is_archived": note.is_archived,
     }
 
 
@@ -115,6 +145,7 @@ def list_notes(
     Use read_note to get the full content of specific notes.
     All parameters are optional. With no filters, returns the most recent notes.
     Date parameters use ISO format (e.g. "2026-01-01").
+    Trashed and archived notes are excluded, mirroring Bear's own UI (D17).
     """
     reader = _get_reader()
     notes = reader.list_notes(
@@ -141,7 +172,8 @@ def list_tags() -> list[dict]:
     """List all Bear note tags with note counts.
 
     Use this to discover what topics and categories exist in the notes
-    before drilling down with search_notes or list_notes.
+    before drilling down with search_notes or list_notes. Counts exclude
+    trashed and archived notes, mirroring Bear's own UI (D17).
     """
     reader = _get_reader()
     tags = reader.list_tags()
@@ -174,24 +206,7 @@ def status() -> dict:
     Returns the number of indexed chunks, unique notes, and the last sync
     timestamp. Use this to check whether the index is populated and fresh.
     """
-    store = _get_store()
-    stats = store.get_stats()
-
-    last_sync = None
-    if config.SYNC_STATE_PATH.exists():
-        import json
-
-        try:
-            state = json.loads(config.SYNC_STATE_PATH.read_text())
-            last_sync = state.get("synced_at")
-        except (json.JSONDecodeError, KeyError):
-            pass
-
-    return {
-        "index_count": stats["count"],
-        "note_count": stats["note_count"],
-        "last_sync": last_sync,
-    }
+    return get_status(_get_store())
 
 
 def main():

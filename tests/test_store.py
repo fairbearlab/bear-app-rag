@@ -146,77 +146,59 @@ def _make_tagged_chunk(note_pk: int, chunk_index: int, text: str, tags: str = ""
 
 
 class TestNoteStoreQueryWithFilter:
-    def test_query_filters_by_single_tag(self, note_store: NoteStore) -> None:
+    """The store applies a Chroma-native `where` filter and does no post-filtering.
+
+    Tag->pk resolution now lives in ``mcp_server.search_notes`` (D2); the store
+    only ever sees a scalar ``{"note_pk": {"$in": [...]}}`` filter. The old
+    hand-rolled ``$contains`` post-filter engine was deleted in T4.
+    """
+
+    def test_query_filters_by_note_pk_in(self, note_store: NoteStore) -> None:
         note_store.upsert_chunks([
-            _make_tagged_chunk(1, 0, "Python web framework tutorial", tags=",python,web,"),
-            _make_tagged_chunk(2, 0, "Rust systems programming guide", tags=",rust,systems,"),
-            _make_tagged_chunk(3, 0, "Python data science notebook", tags=",python,data,"),
+            _make_tagged_chunk(1, 0, "Python web framework tutorial"),
+            _make_tagged_chunk(2, 0, "Rust systems programming guide"),
+            _make_tagged_chunk(3, 0, "Go networking library"),
         ])
-        results = note_store.query("programming", n_results=10, where={"tags": {"$contains": ",python,"}})
+        results = note_store.query(
+            "programming", n_results=10, where={"note_pk": {"$in": [1, 3]}}
+        )
         result_pks = {c.metadata["note_pk"] for c in results}
         assert result_pks == {1, 3}
 
-    def test_query_filters_by_multiple_tags_or(self, note_store: NoteStore) -> None:
+    def test_query_single_pk_in(self, note_store: NoteStore) -> None:
         note_store.upsert_chunks([
-            _make_tagged_chunk(1, 0, "Python web framework tutorial", tags=",python,web,"),
-            _make_tagged_chunk(2, 0, "Rust systems programming guide", tags=",rust,systems,"),
-            _make_tagged_chunk(3, 0, "Go networking library", tags=",go,networking,"),
+            _make_tagged_chunk(1, 0, "Python web framework tutorial"),
+            _make_tagged_chunk(2, 0, "Rust systems programming guide"),
         ])
         results = note_store.query(
-            "programming", n_results=10,
-            where={"$or": [{"tags": {"$contains": ",python,"}}, {"tags": {"$contains": ",rust,"}}]},
+            "programming", n_results=10, where={"note_pk": {"$in": [2]}}
         )
         result_pks = {c.metadata["note_pk"] for c in results}
-        assert result_pks == {1, 2}
+        assert result_pks == {2}
 
     def test_query_without_filter_returns_all(self, note_store: NoteStore) -> None:
         note_store.upsert_chunks([
-            _make_tagged_chunk(1, 0, "Python web framework tutorial", tags=",python,web,"),
-            _make_tagged_chunk(2, 0, "Rust systems programming guide", tags=",rust,systems,"),
+            _make_tagged_chunk(1, 0, "Python web framework tutorial"),
+            _make_tagged_chunk(2, 0, "Rust systems programming guide"),
         ])
         results = note_store.query("programming", n_results=10)
         assert len(results) == 2
 
-    def test_query_mixed_or_contains_and_equality(self, note_store: NoteStore) -> None:
-        """Mixed $or with $contains and non-$contains preserves OR semantics."""
-        note_store.upsert_chunks([
-            _make_tagged_chunk(1, 0, "Python web framework tutorial", tags=",python,web,", title="PyWeb"),
-            _make_tagged_chunk(2, 0, "Rust systems programming guide", tags=",rust,systems,", title="RustGuide"),
-            _make_tagged_chunk(3, 0, "Go networking library", tags=",go,networking,", title="GoNet"),
-        ])
-        # Should match note 1 (tags contains python) OR note 2 (title == RustGuide)
+    def test_query_large_pk_in_list(self, note_store: NoteStore) -> None:
+        """D22 scale check: a popular tag resolves to thousands of pks. Chroma's
+        native `$in` must accept a large list without a validation error, so no
+        batched fallback is needed."""
+        chunks = [
+            _make_tagged_chunk(pk, 0, f"Note {pk} about programming and systems")
+            for pk in range(1, 3001)
+        ]
+        note_store.upsert_chunks(chunks)
+        big_pks = list(range(1, 2501))  # 2500 pks in the filter
         results = note_store.query(
-            "programming", n_results=10,
-            where={"$or": [{"tags": {"$contains": ",python,"}}, {"title": "RustGuide"}]},
+            "programming", n_results=10, where={"note_pk": {"$in": big_pks}}
         )
-        result_pks = {c.metadata["note_pk"] for c in results}
-        assert result_pks == {1, 2}
-
-    def test_query_mixed_or_single_non_contains_no_crash(self, note_store: NoteStore) -> None:
-        """Mixed $or with one $contains and one non-$contains should not crash."""
-        note_store.upsert_chunks([
-            _make_tagged_chunk(1, 0, "Python notes", tags=",python,", title="PyNotes"),
-            _make_tagged_chunk(2, 0, "Other notes", tags=",other,", title="Other"),
-        ])
-        results = note_store.query(
-            "notes", n_results=10,
-            where={"$or": [{"tags": {"$contains": ",python,"}}, {"title": "Other"}]},
-        )
-        result_pks = {c.metadata["note_pk"] for c in results}
-        assert result_pks == {1, 2}
-
-    def test_query_tag_no_substring_false_positive(self, note_store: NoteStore) -> None:
-        """Searching for tag 'work' must NOT match 'homework' (delimiter prevents substring match)."""
-        note_store.upsert_chunks([
-            _make_tagged_chunk(1, 0, "Office productivity tips", tags=",work,"),
-            _make_tagged_chunk(2, 0, "Math homework assignment", tags=",homework,"),
-        ])
-        results = note_store.query(
-            "tasks", n_results=10,
-            where={"tags": {"$contains": ",work,"}},
-        )
-        result_pks = {c.metadata["note_pk"] for c in results}
-        assert result_pks == {1}, "Tag 'work' should not match 'homework'"
+        assert len(results) == 10
+        assert all(c.metadata["note_pk"] in set(big_pks) for c in results)
 
 
 class TestNoteStoreStats:

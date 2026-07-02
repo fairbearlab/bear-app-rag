@@ -5,6 +5,7 @@ import sys
 
 from bear_rag import config
 from bear_rag.bear_reader import BearReader
+from bear_rag.status import get_status
 from bear_rag.store import NoteStore
 from bear_rag.sync import full_index, sync
 
@@ -40,14 +41,10 @@ def _cmd_sync(args, store, reader):
 
 
 def _cmd_status(args, store):
-    stats = store.get_stats()
-    print(f"Notes indexed: {stats['note_count']}")
-    print(f"Chunks indexed: {stats['count']}")
-
-    if config.SYNC_STATE_PATH.exists():
-        import json
-        state = json.loads(config.SYNC_STATE_PATH.read_text())
-        print(f"Last synced: {state.get('synced_at', 'unknown')}")
+    result = get_status(store)
+    print(f"Notes indexed: {result['note_count']}")
+    print(f"Chunks indexed: {result['index_count']}")
+    print(f"Last synced: {result['last_sync'] or 'never'}")
 
 
 def main():

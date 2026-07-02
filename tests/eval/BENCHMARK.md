@@ -4,10 +4,9 @@
 
 | Metric | RAG | Keyword (LIKE) |
 |--------|-----|----------------|
-| Recall@5 | 0.92 | 0.76 |
-| MRR | 0.90 | 0.76 |
-| Groundedness | 0.86 | 0.80 |
-| LLM-Judge Groundedness | 0.71 | 0.65 |
+| Recall@5 | 0.90 | 0.75 |
+| MRR | 0.91 | 0.79 |
+| Groundedness | 0.87 | 0.80 |
 
 ## By Query Type
 
@@ -17,6 +16,9 @@
 | multi_concept | 5 | 0.83 | 0.73 | 0.84 | 0.90 |
 | paraphrase | 5 | 1.00 | 0.60 | 0.77 | 0.44 |
 | synonym | 5 | 0.83 | 0.70 | 1.00 | 0.70 |
+| tag_multi_or | 1 | 1.00 | 0.67 | 1.00 | 1.00 |
+| tag_no_match | 1 | 1.00 | 1.00 | 1.00 | 1.00 |
+| tag_single | 1 | 0.33 | 0.33 | 1.00 | 1.00 |
 
 ## Side-by-Side Examples
 

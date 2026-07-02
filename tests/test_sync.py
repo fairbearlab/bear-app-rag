@@ -116,6 +116,66 @@ def test_incremental_sync_only_updates_changed(mock_reader, note_store_sync, syn
     assert note_store_sync.get_stats()["count"] == count_after_first
 
 
+def _indexed_pks(store: NoteStore) -> set[int]:
+    """Read the set of note PKs currently present in the store's collection."""
+    raw = store._collection.get(include=["metadatas"])
+    return {int(m["note_pk"]) for m in raw["metadatas"]}
+
+
+def test_sync_removes_archived_note_chunks(
+    mock_reader, note_store_sync, sync_state_path, bear_db
+):
+    """Regression (D6/D18): a note archived after indexing must have its chunks
+    removed on the next sync.
+
+    The note is archived WITHOUT bumping ZMODIFICATIONDATE — the worst case for a
+    modified-since-based deletion strategy (archiving may not touch the mod date;
+    verification was inconclusive). Reconciliation must catch it regardless.
+    """
+    sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+    assert 1 in _indexed_pks(note_store_sync), "note 1 should be indexed initially"
+
+    # Archive note 1 in Bear, leaving ZMODIFICATIONDATE untouched.
+    conn = sqlite3.connect(str(bear_db))
+    conn.execute("UPDATE ZSFNOTE SET ZARCHIVED = 1 WHERE Z_PK = 1")
+    conn.commit()
+    conn.close()
+
+    result = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+
+    assert result.notes_deleted == 1
+    assert 1 not in _indexed_pks(note_store_sync), "archived note's chunks must be gone"
+
+
+def test_second_sync_after_archive_is_idempotent(
+    mock_reader, note_store_sync, sync_state_path, bear_db
+):
+    """Regression (D12): once an archived note is reconciled away, further syncs
+    must report 0 updated / 0 deleted — no phantom re-deletes, stable counts."""
+    sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+
+    conn = sqlite3.connect(str(bear_db))
+    conn.execute("UPDATE ZSFNOTE SET ZARCHIVED = 1 WHERE Z_PK = 1")
+    conn.commit()
+    conn.close()
+
+    sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)  # removes note 1
+    result = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+
+    assert result.notes_updated == 0
+    assert result.notes_deleted == 0
+
+
+def test_repeated_sync_no_changes_is_idempotent(
+    mock_reader, note_store_sync, sync_state_path
+):
+    """A plain second sync with no Bear changes reports 0 updated / 0 deleted."""
+    sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+    result = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+    assert result.notes_updated == 0
+    assert result.notes_deleted == 0
+
+
 def test_dry_run_does_not_modify_store(mock_reader, note_store_sync, sync_state_path):
     """dry_run=True should report what would change but not write to store or state file."""
     result = sync(

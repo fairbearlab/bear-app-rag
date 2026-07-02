@@ -95,14 +95,66 @@ class BearReader:
             cur.execute(query, (since_timestamp,))
             return [row[0] for row in cur.fetchall()]
 
+    def read_active_pks(self) -> set[int]:
+        """Return the PKs of all live (non-trashed, non-archived) notes.
+
+        This is the authoritative "what should be in the index" set used by
+        :func:`~bear_rag.sync.sync` for reconciliation (D18): any note present in
+        the index but absent from this set — archived, trashed, or deleted
+        outright — is stale and gets dropped. Deliberately independent of
+        ``ZMODIFICATIONDATE`` so the fix holds whether or not archiving bumps
+        that timestamp (a read-only probe of the real Bear DB was inconclusive;
+        trashing, notably, does not bump it).
+        """
+        query = """
+            SELECT Z_PK FROM ZSFNOTE
+            WHERE ZTRASHED = 0 AND ZARCHIVED = 0
+        """
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute(query)
+            return {row[0] for row in cur.fetchall()}
+
+    def note_pks_for_tags(self, tags: list[str]) -> set[int]:
+        """Return the PKs of non-trashed, non-archived notes carrying any of *tags*.
+
+        Dedicated tag->pk resolver for the MCP search path (see
+        ``mcp_server.search_notes``). Deliberately NOT ``list_notes``: this is
+        multi-tag (OR semantics), uncapped (no ``LIMIT``), and returns bare pks
+        rather than full ``BearNote`` objects. Like every sibling reader it
+        excludes both trashed (``ZTRASHED = 0``) and archived (``ZARCHIVED = 0``,
+        D14) notes, so tag filtering never resurfaces a note the rest of the
+        surface hides. Matching is exact-segment on ``ZTITLE`` (consistent with
+        ``list_notes``), so ``work`` never matches ``homework``.
+        """
+        if not tags:
+            return set()
+        placeholders = ",".join("?" for _ in tags)
+        query = f"""
+            SELECT DISTINCT n.Z_PK
+            FROM ZSFNOTE n
+            JOIN Z_5TAGS jt ON jt.Z_5NOTES = n.Z_PK
+            JOIN ZSFNOTETAG t ON t.Z_PK = jt.Z_13TAGS
+            WHERE n.ZTRASHED = 0 AND n.ZARCHIVED = 0 AND t.ZTITLE IN ({placeholders})
+        """
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute(query, tags)
+            return {row[0] for row in cur.fetchall()}
+
     def list_tags(self) -> list[tuple[str, int]]:
-        """Return (tag_name, note_count) tuples sorted by count descending. Only counts non-trashed notes."""
+        """Return (tag_name, note_count) tuples sorted by count descending.
+
+        Counts only live notes: both trashed and archived notes are excluded so
+        this browse surface mirrors Bear's own UI (D17), consistent with the
+        search and ``list_notes`` paths.
+        """
         query = """
             SELECT t.ZTITLE, COUNT(*) as cnt
             FROM ZSFNOTETAG t
             JOIN Z_5TAGS jt ON jt.Z_13TAGS = t.Z_PK
             JOIN ZSFNOTE n ON n.Z_PK = jt.Z_5NOTES
-            WHERE n.ZTRASHED = 0
+            WHERE n.ZTRASHED = 0 AND n.ZARCHIVED = 0
             GROUP BY t.ZTITLE
             ORDER BY cnt DESC
         """
@@ -137,8 +189,13 @@ class BearReader:
         title_contains: str | None = None,
         limit: int = 50,
     ) -> list[BearNote]:
-        """Return non-trashed notes matching the given filters, ordered by modified date descending."""
-        conditions = ["n.ZTRASHED = 0"]
+        """Return live notes matching the given filters, ordered by modified date descending.
+
+        Excludes both trashed and archived notes so this browse surface mirrors
+        Bear's own UI (D17). Use :meth:`read_note_by_title` for the deliberate
+        direct fetch that can still surface an archived note.
+        """
+        conditions = ["n.ZTRASHED = 0", "n.ZARCHIVED = 0"]
         params: list = []
         joins = ""
 
