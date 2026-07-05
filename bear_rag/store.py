@@ -1,10 +1,14 @@
 from pathlib import Path
 
-import chromadb
-from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
-
+# Import config before chromadb so ANONYMIZED_TELEMETRY is set in the
+# environment before chromadb reads it (e.g. when NoteStore is imported
+# directly, without going through demo.py / cli.py first). See config.py.
 from bear_rag import config
-from bear_rag.models import Chunk, ChunkMetadata
+
+import chromadb  # noqa: E402 — must follow config import (see above)
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction  # noqa: E402
+
+from bear_rag.models import Chunk, ChunkMetadata  # noqa: E402
 
 _COLLECTION_NAME = "bear_notes"
 
@@ -95,12 +99,20 @@ class NoteStore:
             chunks.append(Chunk(id=chunk_id, text=document, metadata=chunk_metadata))
         return chunks
 
+    def indexed_note_pks(self) -> set[int]:
+        """Return the set of note PKs with at least one chunk in the collection.
+
+        Public accessor so callers (sync reconciliation, get_stats) need not
+        reach into the underlying ChromaDB collection.
+        """
+        if self._collection.count() == 0:
+            return set()
+        raw = self._collection.get(include=["metadatas"])
+        return {int(m["note_pk"]) for m in raw["metadatas"]}
+
     def get_stats(self) -> dict:
         """Return a dict with basic collection statistics."""
-        count = self._collection.count()
-        note_count = 0
-        if count > 0:
-            result = self._collection.get(include=["metadatas"])
-            note_pks = {m["note_pk"] for m in result["metadatas"]}
-            note_count = len(note_pks)
-        return {"count": count, "note_count": note_count}
+        return {
+            "count": self._collection.count(),
+            "note_count": len(self.indexed_note_pks()),
+        }

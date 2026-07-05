@@ -36,7 +36,8 @@ def _handle_errors(func):
             logger.error("Bear database not found: %s", exc)
             return {"error": "Bear database not found. Is Bear installed?"}
         except ValueError as exc:
-            return {"error": f"Invalid input: {exc}"}
+            logger.error("Invalid input to %s: %s", func.__name__, exc)
+            return {"error": "Invalid input. Check that arguments (e.g. dates) are well-formed."}
         except Exception:
             logger.exception("Unexpected error in %s", func.__name__)
             return {"error": "Internal error (see server logs)"}

@@ -33,18 +33,6 @@ def _write_state(state_path: Path, timestamp: float) -> None:
     state_path.write_text(json.dumps(state))
 
 
-def _indexed_note_pks(store: NoteStore) -> set[int]:
-    """Return the set of note PKs currently present in *store*.
-
-    Used by :func:`sync` for reconciliation. Reads chunk metadata straight from
-    the underlying collection; ``NoteStore`` exposes no public pk enumerator
-    today (a small ``indexed_note_pks()`` accessor would be a cleaner home, but
-    that lives outside this change's file scope).
-    """
-    raw = store._collection.get(include=["metadatas"])
-    return {int(m["note_pk"]) for m in raw["metadatas"]}
-
-
 def check_index_version(state_path: Path = config.SYNC_STATE_PATH) -> bool:
     """Return True if the stored index version matches the current version.
 
@@ -108,7 +96,7 @@ def sync(
     # ZMODIFICATIONDATE (and trashing does not), so reconciliation is the fix
     # that holds either way. It also subsumes the old trashed-pk deletion.
     active_pks = reader.read_active_pks()
-    stale_pks = _indexed_note_pks(store) - active_pks
+    stale_pks = store.indexed_note_pks() - active_pks
 
     notes_updated = len(changed_notes)
     notes_deleted = len(stale_pks)
