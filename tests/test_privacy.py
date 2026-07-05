@@ -11,9 +11,10 @@ model download from ``chroma-onnx-models.s3.amazonaws.com``. It is pre-warmed
 *before* sockets are blocked, so the guarded assertions exercise a cache hit, not
 a cold download.
 
-The generator / ``bear-rag ask`` path is deliberately NOT covered here: it
-legitimately POSTs retrieved chunk text to the Anthropic API. This test asserts
-the embedding/retrieval boundary, not "no network, ever".
+The eval LLM judge (``tests/eval/eval_harness.py``) is deliberately NOT covered
+here: it is dev-only tooling that legitimately POSTs to the Anthropic API to
+score retrieval quality, and it never runs as part of the installed package.
+This test asserts the embedding/retrieval boundary, not "no network, ever".
 """
 
 from __future__ import annotations

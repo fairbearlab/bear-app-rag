@@ -16,10 +16,8 @@ classifiers = [
     "Topic :: Text Processing :: Indexing",
 ]
 dependencies = [
-    "anthropic>=0.49,<1.0",
     "chromadb>=1.0,<2.0",
     "mcp>=1.0,<2.0",
-    "python-dotenv>=1.0,<2.0",
 ]
 
 [project.urls]
@@ -27,7 +25,10 @@ Repository = "https://github.com/fairbearlab/bear-app-rag"
 Documentation = "https://fairbearlab.github.io/bear-app-rag/"
 
 [project.optional-dependencies]
-dev = ["pytest>=9.0,<10.0", "pytest-socket>=0.8.0"]
+# anthropic: used only by the LLM-judge eval harness (tests/eval/eval_harness.py)
+# and TestLLMJudgeFailsClosed (test_eval.py), which runs unmarked in the default
+# suite — hence dev, not the research-only extra below.
+dev = ["anthropic>=0.49,<1.0", "pytest>=9.0,<10.0", "pytest-socket>=0.8.0"]
 # Research-only: runs alternate local ONNX embedding models for the
 # embedding-model sweep (tests/eval/embedding_sweep.py, ADR-0008). fastembed is
 # Apache-2.0 and ONNX-Runtime based (no PyTorch). NOT a runtime dependency — the

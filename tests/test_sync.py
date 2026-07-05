@@ -116,6 +116,60 @@ def test_incremental_sync_only_updates_changed(mock_reader, note_store_sync, syn
     assert note_store_sync.get_stats()["count"] == count_after_first
 
 
+def test_sync_removes_archived_note_chunks(
+    mock_reader, note_store_sync, sync_state_path, bear_db
+):
+    """Regression (D6/D18): a note archived after indexing must have its chunks
+    removed on the next sync.
+
+    The note is archived WITHOUT bumping ZMODIFICATIONDATE — the worst case for a
+    modified-since-based deletion strategy (archiving may not touch the mod date;
+    verification was inconclusive). Reconciliation must catch it regardless.
+    """
+    sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+    assert 1 in note_store_sync.indexed_note_pks(), "note 1 should be indexed initially"
+
+    # Archive note 1 in Bear, leaving ZMODIFICATIONDATE untouched.
+    conn = sqlite3.connect(str(bear_db))
+    conn.execute("UPDATE ZSFNOTE SET ZARCHIVED = 1 WHERE Z_PK = 1")
+    conn.commit()
+    conn.close()
+
+    result = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+
+    assert result.notes_deleted == 1
+    assert 1 not in note_store_sync.indexed_note_pks(), "archived note's chunks must be gone"
+
+
+def test_second_sync_after_archive_is_idempotent(
+    mock_reader, note_store_sync, sync_state_path, bear_db
+):
+    """Regression (D12): once an archived note is reconciled away, further syncs
+    must report 0 updated / 0 deleted — no phantom re-deletes, stable counts."""
+    sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+
+    conn = sqlite3.connect(str(bear_db))
+    conn.execute("UPDATE ZSFNOTE SET ZARCHIVED = 1 WHERE Z_PK = 1")
+    conn.commit()
+    conn.close()
+
+    sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)  # removes note 1
+    result = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+
+    assert result.notes_updated == 0
+    assert result.notes_deleted == 0
+
+
+def test_repeated_sync_no_changes_is_idempotent(
+    mock_reader, note_store_sync, sync_state_path
+):
+    """A plain second sync with no Bear changes reports 0 updated / 0 deleted."""
+    sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+    result = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
+    assert result.notes_updated == 0
+    assert result.notes_deleted == 0
+
+
 def test_dry_run_does_not_modify_store(mock_reader, note_store_sync, sync_state_path):
     """dry_run=True should report what would change but not write to store or state file."""
     result = sync(
@@ -156,12 +210,8 @@ def test_full_index_resets_and_syncs(mock_reader, note_store_sync, sync_state_pa
     stats = note_store_sync.get_stats()
     assert stats["count"] > 0
 
-    # Verify stale chunk id "999_0" is no longer present by checking note PKs in store
-    # (query with a broad search and verify 999 is absent from results)
-    from bear_rag.store import NoteStore
-    raw = note_store_sync._collection.get()
-    note_pks_in_store = {m["note_pk"] for m in raw["metadatas"]}
-    assert 999 not in note_pks_in_store
+    # Verify stale chunk id "999_0" is no longer present.
+    assert 999 not in note_store_sync.indexed_note_pks()
 
     assert result.notes_updated == 3
     assert result.chunks_added > 0

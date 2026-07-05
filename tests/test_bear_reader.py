@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -113,17 +114,49 @@ class TestBearReaderTrashedPks:
         assert pks == []
 
 
+class TestBearReaderReadActivePks:
+    """Unit tests for the reconciliation source-of-truth set (D18).
+
+    conftest ``bear_db`` fixture recap:
+      note 1 (kept), note 2 (kept), note 3 (trashed),
+      note 4 (archived), note 5 (kept).
+    """
+
+    def test_returns_only_live_notes(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        assert reader.read_active_pks() == {1, 2, 5}
+
+    def test_excludes_archived(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        assert 4 not in reader.read_active_pks()
+
+    def test_excludes_trashed(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        assert 3 not in reader.read_active_pks()
+
+    def test_returns_set(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        assert isinstance(reader.read_active_pks(), set)
+
+
 class TestBearReaderListTags:
     def test_returns_tags_with_counts(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
         tags = reader.list_tags()
         tag_dict = dict(tags)
         # From conftest: "work" on notes 1,3 but note 3 is trashed -> count 1
-        # "personal" on notes 1,4 but note 4 is archived (not trashed) -> count 2
+        # "personal" on notes 1,4 but note 4 is archived -> excluded (D17) -> count 1
         # "recent" on note 2 -> count 1
-        assert tag_dict["personal"] == 2
+        assert tag_dict["personal"] == 1
         assert tag_dict["work"] == 1
         assert tag_dict["recent"] == 1
+
+    def test_excludes_archived_notes(self, bear_db: Path) -> None:
+        """Archived notes must not contribute to tag counts (D17)."""
+        reader = BearReader(bear_db)
+        tag_dict = dict(reader.list_tags())
+        # "personal" is on note 1 (kept) and note 4 (archived) -> only note 1
+        assert tag_dict["personal"] == 1
 
     def test_sorted_by_count_descending(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
@@ -178,7 +211,8 @@ class TestBearReaderListNotes:
         notes = reader.list_notes()
         pks = [n.pk for n in notes]
         assert 3 not in pks, "Trashed note should be excluded"
-        assert len(notes) == 4  # notes 1, 2, 4, 5
+        assert 4 not in pks, "Archived note should be excluded (D17)"
+        assert len(notes) == 3  # notes 1, 2, 5
 
     def test_filter_by_tag(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
@@ -244,6 +278,77 @@ class TestBearReaderListNotes:
         notes = reader.list_notes()
         dates = [n.modified_at for n in notes]
         assert dates == sorted(dates, reverse=True)
+
+
+class TestBearReaderNotePksForTags:
+    """Unit tests for the tag->pk resolver used by mcp_server.search_notes (D15).
+
+    conftest ``bear_db`` fixture recap:
+      note 1 -> work, personal   (kept)
+      note 2 -> recent           (kept)
+      note 3 -> work             (trashed)
+      note 4 -> personal         (archived)
+      note 5 -> (no tags)        (kept)
+    """
+
+    def test_single_tag(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        assert reader.note_pks_for_tags(["recent"]) == {2}
+
+    def test_multi_tag_or_dedup(self, bear_db: Path) -> None:
+        """OR union across tags; a note carrying two of the tags appears once."""
+        reader = BearReader(bear_db)
+        # note 1 has both work AND personal -> must dedup to a single pk;
+        # note 2 has recent. note 3 (work) is trashed, note 4 (personal) archived.
+        assert reader.note_pks_for_tags(["work", "personal", "recent"]) == {1, 2}
+
+    def test_no_match_returns_empty_set(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        assert reader.note_pks_for_tags(["nonexistent-tag-xyz"]) == set()
+
+    def test_empty_tag_list_returns_empty_set(self, bear_db: Path) -> None:
+        reader = BearReader(bear_db)
+        assert reader.note_pks_for_tags([]) == set()
+
+    def test_archived_excluded(self, bear_db: Path) -> None:
+        """'personal' is on note 1 (kept) and note 4 (archived); only note 1."""
+        reader = BearReader(bear_db)
+        assert reader.note_pks_for_tags(["personal"]) == {1}
+
+    def test_trashed_excluded(self, bear_db: Path) -> None:
+        """'work' is on note 1 (kept) and note 3 (trashed); only note 1."""
+        reader = BearReader(bear_db)
+        assert reader.note_pks_for_tags(["work"]) == {1}
+
+    def test_uncapped_over_50_notes(self, tmp_path: Path) -> None:
+        """The resolver has no LIMIT, unlike list_notes (limit=50)."""
+        db_path = tmp_path / "bulk.sqlite"
+        conn = sqlite3.connect(str(db_path))
+        cur = conn.cursor()
+        cur.execute(
+            "CREATE TABLE ZSFNOTE (Z_PK INTEGER PRIMARY KEY, ZTITLE TEXT, ZTEXT TEXT, "
+            "ZMODIFICATIONDATE REAL, ZTRASHED INTEGER DEFAULT 0, ZARCHIVED INTEGER DEFAULT 0)"
+        )
+        cur.execute("CREATE TABLE ZSFNOTETAG (Z_PK INTEGER PRIMARY KEY, ZTITLE TEXT)")
+        cur.execute("CREATE TABLE Z_5TAGS (Z_5NOTES INTEGER, Z_13TAGS INTEGER)")
+        cur.execute("INSERT INTO ZSFNOTETAG (Z_PK, ZTITLE) VALUES (1, 'bulk')")
+        n = 120
+        cur.executemany(
+            "INSERT INTO ZSFNOTE (Z_PK, ZTITLE, ZTEXT, ZMODIFICATIONDATE, ZTRASHED, ZARCHIVED) "
+            "VALUES (?, ?, ?, 0.0, 0, 0)",
+            [(pk, f"Note {pk}", "body") for pk in range(1, n + 1)],
+        )
+        cur.executemany(
+            "INSERT INTO Z_5TAGS (Z_5NOTES, Z_13TAGS) VALUES (?, 1)",
+            [(pk,) for pk in range(1, n + 1)],
+        )
+        conn.commit()
+        conn.close()
+
+        reader = BearReader(db_path)
+        pks = reader.note_pks_for_tags(["bulk"])
+        assert len(pks) == n
+        assert pks == set(range(1, n + 1))
 
 
 class TestBearReaderDbNotFound:

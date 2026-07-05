@@ -1,14 +1,11 @@
 """Command-line interface for bear-rag."""
 
 import argparse
-import os
 import sys
-
-from dotenv import load_dotenv
 
 from bear_rag import config
 from bear_rag.bear_reader import BearReader
-from bear_rag.generator import generate_answer
+from bear_rag.status import get_status
 from bear_rag.store import NoteStore
 from bear_rag.sync import full_index, sync
 
@@ -43,50 +40,14 @@ def _cmd_sync(args, store, reader):
     _print_sync_result(result, verb=verb)
 
 
-def _cmd_ask(args, store):
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("Error: ANTHROPIC_API_KEY is not set.", file=sys.stderr)
-        sys.exit(1)
-
-    if args.question:
-        # One-shot mode
-        chunks = store.query(text=args.question)
-        answer = generate_answer(args.question, chunks)
-        print(answer)
-    else:
-        # REPL mode
-        while True:
-            try:
-                line = input("bear-rag> ")
-            except EOFError:
-                break
-
-            line = line.strip()
-            if not line:
-                continue
-            if line.lower() in ("quit", "exit"):
-                break
-
-            chunks = store.query(text=line)
-            answer = generate_answer(line, chunks)
-            print(answer)
-
-
 def _cmd_status(args, store):
-    stats = store.get_stats()
-    print(f"Notes indexed: {stats['note_count']}")
-    print(f"Chunks indexed: {stats['count']}")
-
-    if config.SYNC_STATE_PATH.exists():
-        import json
-        state = json.loads(config.SYNC_STATE_PATH.read_text())
-        print(f"Last synced: {state.get('synced_at', 'unknown')}")
+    result = get_status(store)
+    print(f"Notes indexed: {result['note_count']}")
+    print(f"Chunks indexed: {result['index_count']}")
+    print(f"Last synced: {result['last_sync'] or 'never'}")
 
 
 def main():
-    load_dotenv()
-
     parser = argparse.ArgumentParser(
         prog="bear-rag",
         description="RAG over your Bear notes.",
@@ -109,15 +70,6 @@ def main():
         action="store_true",
         default=False,
         help="Suppress output when there are no changes.",
-    )
-
-    # ask subcommand
-    ask_parser = subparsers.add_parser("ask", help="Ask a question about your notes.")
-    ask_parser.add_argument(
-        "question",
-        nargs="?",
-        default=None,
-        help="Question to answer. If omitted, enters interactive REPL mode.",
     )
 
     # status subcommand
@@ -145,7 +97,5 @@ def main():
             _cmd_index(args, store, reader)
         else:
             _cmd_sync(args, store, reader)
-    elif args.command == "ask":
-        _cmd_ask(args, store)
     elif args.command == "status":
         _cmd_status(args, store)

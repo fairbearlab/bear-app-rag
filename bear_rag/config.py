@@ -1,8 +1,12 @@
 import os
 from pathlib import Path
 
-# Disable ChromaDB telemetry before it's imported anywhere.
-# Must happen at import time because chromadb reads this env var on import.
+# Belt-and-suspenders telemetry disable. NoteStore also passes
+# chromadb.config.Settings(anonymized_telemetry=False) to PersistentClient,
+# which is the authoritative switch — but the socket-block privacy test
+# (tests/test_privacy.py) imports chromadb before any Settings object exists,
+# so an import-time telemetry call would be invisible to it. Setting the env
+# var here, at config import time, closes that window too.
 os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
 
 # Embedding model — pinned for reproducible eval results across chromadb versions.
@@ -33,4 +37,3 @@ OVERLAP_WORDS = 40
 # Undated alias (not a dated snapshot) so it keeps resolving after a future
 # snapshot retirement rather than returning a 404.
 CLAUDE_MODEL = "claude-sonnet-4-6"
-CLAUDE_MAX_TOKENS = 4096

@@ -158,5 +158,32 @@
     "expected_note_pks": [25],
     "expected_keywords": ["raised bed", "composting", "seasonal", "planting", "cedar", "soil mix"],
     "answer_context": "The garden project planning note contains all these exact terms as section topics: 'Raised Bed Design', 'Composting Setup', and 'Seasonal Planting Schedule'."
+  },
+  {
+    "id": "q21",
+    "query": "budget-friendly recipes for home cooking",
+    "type": "tag_single",
+    "tags": ["recipes"],
+    "expected_note_pks": [1, 2, 3],
+    "expected_keywords": ["curry", "sourdough", "meal prep"],
+    "answer_context": "Notes tagged 'recipes' are the Thai curry, sourdough baking, and meal-prep guides -- this is the pk universe a single-tag filter on 'recipes' must be confined to (precision check, D16)."
+  },
+  {
+    "id": "q22",
+    "query": "fermentation projects and long-distance hiking",
+    "type": "tag_multi_or",
+    "tags": ["fermentation", "hiking"],
+    "expected_note_pks": [2, 5, 7],
+    "expected_keywords": ["starter", "sauerkraut", "Pacific Crest Trail"],
+    "answer_context": "Notes tagged 'fermentation' (sourdough, fermented foods guide) or 'hiking' (Pacific Crest Trail) form the OR union a multi-tag filter must be confined to (precision check, D16)."
+  },
+  {
+    "id": "q23",
+    "query": "anything at all",
+    "type": "tag_no_match",
+    "tags": ["nonexistent-tag-xyz"],
+    "expected_note_pks": [],
+    "expected_keywords": [],
+    "answer_context": "No note in the fixture corpus carries this tag. A tag filter that resolves to zero pks must short-circuit to an empty result rather than falling back to unfiltered matching -- the {\"$in\": []} bug class D4/D16 target. recall_at_k/mrr return 1.0 on an empty expected_note_pks, so this case's real gate is the len(results) == 0 assertion, not the recall metric."
   }
 ]

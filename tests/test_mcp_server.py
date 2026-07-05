@@ -71,46 +71,47 @@ class TestSearchNotes:
         assert isinstance(results[0]["tags"], list)
 
     def test_single_tag_filter(self, reader, store) -> None:
-        """Filtering by a single tag returns only matching chunks."""
+        """Filtering by a single tag returns only chunks from notes carrying it.
+
+        Uses pks that exist in the conftest ``bear_db`` fixture: tag 'work' is
+        on note 1 (kept) and note 3 (trashed, excluded), so the reader resolves
+        it to {1}.
+        """
         _index_all_notes(reader, store)
         results = mcp_server.search_notes("note", tags=["work"])
         assert len(results) > 0
+        pks = {r["note_pk"] for r in results}
+        assert pks == {1}
         for r in results:
             assert "work" in r["tags"]
 
     def test_multi_tag_filter(self, reader, store) -> None:
-        """Filtering by multiple tags returns chunks matching any tag."""
+        """Filtering by multiple tags returns chunks from notes matching any tag.
+
+        'work' -> note 1, 'recent' -> note 2 in the conftest ``bear_db`` fixture.
+        """
         _index_all_notes(reader, store)
         results = mcp_server.search_notes("note", tags=["work", "recent"])
         assert len(results) > 0
+        pks = {r["note_pk"] for r in results}
+        assert pks <= {1, 2}
         for r in results:
             assert "work" in r["tags"] or "recent" in r["tags"]
 
-    def test_tag_filter_no_substring_match(self, reader, store) -> None:
-        """Tag 'work' must not match notes tagged 'homework' (regression test for delimiter fix)."""
-        from bear_rag.models import Chunk, ChunkMetadata
-
-        store.upsert_chunks([
-            Chunk(
-                id="100_0",
-                text="Office productivity tips",
-                metadata=ChunkMetadata(
-                    note_pk=100, title="Work Note", tags=",work,",
-                    chunk_index=0, heading_path="", modified_at="2024-01-01T00:00:00+00:00", source="bear",
-                ),
-            ),
-            Chunk(
-                id="101_0",
-                text="Math homework assignment",
-                metadata=ChunkMetadata(
-                    note_pk=101, title="Homework Note", tags=",homework,",
-                    chunk_index=0, heading_path="", modified_at="2024-01-01T00:00:00+00:00", source="bear",
-                ),
-            ),
-        ])
-        results = mcp_server.search_notes("tasks", tags=["work"])
+    def test_tag_filter_excludes_archived(self, reader, store) -> None:
+        """Tag 'personal' is on note 1 (kept) and note 4 (archived); the archived
+        note must not surface (D14)."""
+        _index_all_notes(reader, store)
+        results = mcp_server.search_notes("note", tags=["personal"])
         pks = {r["note_pk"] for r in results}
-        assert 101 not in pks, "Tag 'work' should not match 'homework'"
+        assert 4 not in pks, "Archived note must not surface via tag filter"
+
+    def test_no_match_tag_returns_empty(self, reader, store) -> None:
+        """A tag that resolves to zero pks must short-circuit to [] (D4), never
+        fall back to unfiltered matching via {"$in": []}."""
+        _index_all_notes(reader, store)
+        results = mcp_server.search_notes("note", tags=["nonexistent-tag-xyz"])
+        assert results == []
 
 
 class TestReadNote:
@@ -128,12 +129,31 @@ class TestReadNote:
         result = mcp_server.read_note("Does Not Exist")
         assert "error" in result
 
+    def test_returns_is_archived_flag(self, reader) -> None:
+        """read_note surfaces is_archived so callers can mirror Bear's UX (D17)."""
+        result = mcp_server.read_note("Normal Note")
+        assert result["is_archived"] is False
+
+    def test_reads_archived_note_with_flag(self, reader) -> None:
+        """read_note is a deliberate direct fetch: it STILL returns an archived
+        note (unlike search/list), flagged is_archived=True (D17)."""
+        result = mcp_server.read_note("Archived Note")
+        assert "error" not in result
+        assert result["title"] == "Archived Note"
+        assert result["is_archived"] is True
+
 
 class TestListNotes:
     def test_returns_all_non_trashed(self, reader) -> None:
         results = mcp_server.list_notes()
         pks = [r["note_pk"] for r in results]
         assert 3 not in pks  # trashed
+
+    def test_excludes_archived(self, reader) -> None:
+        """Archived notes must not surface via list_notes (D17)."""
+        results = mcp_server.list_notes()
+        pks = [r["note_pk"] for r in results]
+        assert 4 not in pks  # archived
 
     def test_filter_by_tag(self, reader) -> None:
         results = mcp_server.list_notes(tag="work")
@@ -200,15 +220,47 @@ class TestStatus:
 
 
 class TestHandleErrors:
-    def test_file_not_found_returns_error_dict(self, tmp_path) -> None:
-        """When Bear DB is missing, tools should return an error dict, not crash."""
+    def test_file_not_found_returns_generic_message_no_path(self, tmp_path) -> None:
+        """FileNotFoundError must return a fixed generic message — never the DB path.
+
+        bear_reader.py's own FileNotFoundError message embeds the full DB path
+        (which embeds the user's home directory / username); the handler must
+        not forward that to the connected agent.
+        """
         mcp_server._reader = None
         mcp_server._store = None
-        # Point reader at a non-existent DB
-        with patch("bear_rag.mcp_server._get_reader", side_effect=FileNotFoundError("no db")):
+        leaky_path = "/Users/definitely-not-a-real-user/Library/Group Containers/db.sqlite"
+        with patch(
+            "bear_rag.mcp_server._get_reader",
+            side_effect=FileNotFoundError(f"Bear database not found at {leaky_path}. Is Bear installed?"),
+        ):
             result = mcp_server.read_note("Any Title")
+        assert result == {"error": "Bear database not found. Is Bear installed?"}
+        assert leaky_path not in result["error"]
+
+    def test_unexpected_exception_returns_generic_message(self) -> None:
+        """An unexpected exception must return the generic catch-all message.
+
+        Raw str(exc) must never reach the agent — it can leak filesystem
+        paths or other local details, and it masks the real bug behind a
+        confusing agent-facing message.
+        """
+        mcp_server._reader = None
+        mcp_server._store = None
+        leaky_path = "/Users/definitely-not-a-real-user/some-internal-state.db"
+        with patch(
+            "bear_rag.mcp_server._get_reader",
+            side_effect=RuntimeError(f"unexpected failure touching {leaky_path}"),
+        ):
+            result = mcp_server.read_note("Any Title")
+        assert result == {"error": "Internal error (see server logs)"}
+        assert leaky_path not in result["error"]
+
+    def test_value_error_response_has_no_filesystem_path(self, reader) -> None:
+        """The ValueError handler's response must also carry no filesystem path."""
+        result = mcp_server.list_notes(modified_since="not-a-date")
         assert "error" in result
-        assert "not found" in result["error"].lower()
+        assert str(config.BEAR_DB_PATH) not in result["error"]
 
     def test_normal_return_passes_through(self, reader) -> None:
         """Decorator should not interfere with normal tool returns."""

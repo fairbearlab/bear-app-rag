@@ -81,15 +81,25 @@ def sync(
 
     last_timestamp = _read_timestamp(state_path)
 
-    changed_notes = [
-        note
-        for note in reader.read_notes_modified_since(last_timestamp)
-        if not note.is_archived
-    ]
-    trashed_pks = reader.read_trashed_pks(since_timestamp=last_timestamp)
+    # Notes modified since the last sync. This query excludes trashed notes but
+    # *includes* archived ones, so we can both advance the cursor past
+    # archive-only edits (D12) and drop archived notes from the update set.
+    modified_notes = reader.read_notes_modified_since(last_timestamp)
+    changed_notes = [note for note in modified_notes if not note.is_archived]
+
+    # Reconciliation (D18): the index must mirror Bear's live *active* set
+    # (non-trashed, non-archived). Any note still in the index but absent from
+    # that set — archived, trashed, or deleted outright — is stale and removed.
+    # We diff indexed pks against live active pks rather than relying on
+    # archived/trashed notes surfacing in the modified-since scan: a read-only
+    # probe of the real Bear DB could not confirm archiving reliably bumps
+    # ZMODIFICATIONDATE (and trashing does not), so reconciliation is the fix
+    # that holds either way. It also subsumes the old trashed-pk deletion.
+    active_pks = reader.read_active_pks()
+    stale_pks = store.indexed_note_pks() - active_pks
 
     notes_updated = len(changed_notes)
-    notes_deleted = len(trashed_pks)
+    notes_deleted = len(stale_pks)
 
     # Chunk all changed notes once (used for both dry-run counting and upserting).
     chunks_by_note = [(note, chunk_note(note)) for note in changed_notes]
@@ -107,13 +117,18 @@ def sync(
         store.delete_note(note.pk)
         store.upsert_chunks(chunks)
 
-    for pk in trashed_pks:
+    for pk in stale_pks:
         store.delete_note(pk)
 
-    # Compute new timestamp: max ZMODIFICATIONDATE from changed notes, converted
-    # back to a Core Data timestamp float.
-    if changed_notes:
-        latest_dt = max(note.modified_at for note in changed_notes)
+    # Compute the new cursor: max ZMODIFICATIONDATE across ALL notes modified
+    # since the last sync — kept *and* archived (D12). The previous code advanced
+    # only over kept notes, so an archive-only edit (when it bumps
+    # ZMODIFICATIONDATE) would never move the cursor, re-scanning that row and
+    # reporting phantom deletes on every run. Trashed rows are excluded from the
+    # modified-since scan by design and are handled by reconciliation, so they
+    # need no part in the cursor.
+    if modified_notes:
+        latest_dt = max(note.modified_at for note in modified_notes)
         new_timestamp = (latest_dt - CORE_DATA_EPOCH).total_seconds()
     else:
         new_timestamp = last_timestamp

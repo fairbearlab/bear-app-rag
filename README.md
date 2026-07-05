@@ -2,7 +2,7 @@
 
 Local-first semantic search for [Bear](https://bear.app) notes. Indexes your notes with local ONNX embeddings, proves it works with a hand-rolled eval, and serves results to AI agents via MCP.
 
-4 direct dependencies. Zero frameworks. [Provable benchmarks](#benchmark-results).
+2 direct dependencies. Zero frameworks. [Provable benchmarks](#benchmark-results).
 
 ## Why This Exists
 
@@ -55,13 +55,12 @@ flowchart LR
         BR --> CH["Chunker<br/>chunker.py"]
         CH --> NS["NoteStore (ChromaDB)<br/>store.py<br/>ONNX embeddings, local vector store"]
         NS --> MCP["MCP Server<br/>mcp_server.py"]
-        NS --> CLI["CLI<br/>cli.py"]
+        NS --> CLI["CLI<br/>cli.py<br/>(admin only: index/sync/status)"]
     end
-    MCP -. "returns chunks" .-> Agent["Connected AI agent"]
-    CLI -. "bear-rag ask<br/>(opt-in, needs ANTHROPIC_API_KEY)" .-> API["Anthropic API"]
+    MCP -. "returns chunks" .-> Agent["Connected AI agent<br/>(trust boundary, opt-in)"]
 ```
 
-Indexing, embedding, and search are fully local: your notes are read, chunked, and embedded on-device via ONNX Runtime, and the only network call on that path is the one-time model download. Two paths are opt-in and do leave the machine: `bear-rag ask` sends the retrieved chunk text to the Anthropic API to generate an answer (only when `ANTHROPIC_API_KEY` is set), and the MCP server hands retrieved chunks to whatever agent is connected. See [ADR-0002](docs/decisions/0002-local-onnx-embeddings.md) for the full privacy audit.
+The installed package has zero cloud dependency, and the index/search/sync path never egresses: your notes are read, chunked, and embedded on-device via ONNX Runtime, and the only network call on that path is the one-time model download. There is one documented, opt-in boundary: the MCP server hands retrieved chunks to whatever agent is connected (that agent, not this codebase, generates the answer). Dev tooling has a second, separate opt-in caller — the LLM-judge eval harness — that never ships with the package (see [Development](#development)). See [ADR-0002](docs/decisions/0002-local-onnx-embeddings.md) for the full privacy audit.
 
 [Read the full architecture tour.](docs/ARCHITECTURE.md)
 
@@ -113,7 +112,7 @@ RAG wins on paraphrase (+40% recall, +33% MRR) and synonym (+13% recall, +30% MR
 
 Key architectural choices, documented as [ADRs](docs/decisions/):
 
-- **[No LangChain](docs/decisions/0001-no-langchain.md)** -- 4 direct deps, not 50+ transitive
+- **[No LangChain](docs/decisions/0001-no-langchain.md)** -- 2 direct deps, not 50+ transitive
 - **[Local ONNX Embeddings](docs/decisions/0002-local-onnx-embeddings.md)** -- No note data leaves the machine
 - **[Markdown-Aware Chunking](docs/decisions/0003-chunk-sizing-strategy.md)** -- Split on headings, not character count
 - **[MCP as Primary Interface](docs/decisions/0004-mcp-as-primary-interface.md)** -- AI agents are the primary users
@@ -129,8 +128,6 @@ Key architectural choices, documented as [ADRs](docs/decisions/):
 bear-rag index              # Full rebuild -- wipe and re-index all notes
 bear-rag sync               # Incremental update since last sync
 bear-rag sync --dry-run     # Preview what would change
-bear-rag ask "question"     # One-shot query
-bear-rag ask                # Interactive REPL mode
 bear-rag status             # Show index stats and last sync time
 bear-rag demo               # Self-contained benchmark demo (no Bear DB required)
 ```
@@ -142,7 +139,6 @@ bear-rag demo               # Self-contained benchmark demo (no Bear DB required
 | `bear_reader.py` | Reads notes and tags from Bear's SQLite database |
 | `chunker.py` | Markdown-aware splitting at headings with overlap |
 | `store.py` | ChromaDB collection management with ONNX embeddings |
-| `generator.py` | Prompt construction and Claude API calls |
 | `sync.py` | Incremental sync with timestamp-based change detection |
 | `cli.py` | argparse entry point with subcommands |
 | `mcp_server.py` | MCP server exposing 6 tools: search, read, list, tags, sync, status |

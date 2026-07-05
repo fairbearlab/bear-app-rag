@@ -16,9 +16,9 @@ We evaluated LangChain for the Bear notes pipeline and found a mismatch between 
 
 ## Decision
 
-Build the RAG pipeline with direct library calls (chromadb, anthropic) instead of LangChain or any orchestration framework.
+Build the RAG pipeline with direct library calls (chromadb, mcp) instead of LangChain or any orchestration framework.
 
-The entire pipeline is four operations: read SQLite, chunk text, embed into vectors, query them. For a pipeline this small, that's four libraries, not a framework.
+The entire pipeline is four operations: read SQLite, chunk text, embed into vectors, query them. For a pipeline this small, that's two libraries, not a framework.
 
 ## Alternatives Considered
 
@@ -31,7 +31,7 @@ The entire pipeline is four operations: read SQLite, chunk text, embed into vect
 ## Consequences
 
 ### Positive
-- 4 direct dependencies total (anthropic, chromadb, mcp, python-dotenv)
+- 2 direct dependencies total (chromadb, mcp) — even fewer than the pipeline originally shipped with, after `ask` was removed and `anthropic`/`python-dotenv` dropped from production (ADR-0004)
 - Every line of the pipeline is debuggable without framework internals
 - No version coupling between the framework and its underlying libraries
 - The small dependency count keeps the whole pipeline auditable in an afternoon
