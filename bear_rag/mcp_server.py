@@ -78,7 +78,10 @@ def search_notes(query: str, tags: list[str] | None = None, limit: int = 10) -> 
     from the indexed snapshot. A tag edited in Bear since the last sync can
     therefore filter against membership the index hasn't caught up to yet; the
     gap only affects tag edits since the last sync and self-heals on the next
-    sync (see ADR-0004).
+    sync (see ADR-0004). For the same reason, each result's ``tags`` field is
+    read from the indexed snapshot: a note may be included by the live filter on
+    a freshly-added tag that does not yet appear in its returned ``tags`` list
+    until the next sync.
     """
     store = _get_store()
 

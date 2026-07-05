@@ -16,12 +16,18 @@ def get_status(store: NoteStore) -> dict:
     """Return index statistics plus the last-sync timestamp, if any."""
     stats = store.get_stats()
 
+    # Fail open: a missing, unreadable, or malformed state file just means "no
+    # known last-sync", never a crash. OSError covers read/permission failures;
+    # ValueError covers JSON decode errors (incl. UnicodeDecodeError). The
+    # isinstance guard handles valid-but-non-dict JSON (e.g. a bare list), where
+    # .get would raise AttributeError.
     last_sync = None
     if config.SYNC_STATE_PATH.exists():
         try:
             state = json.loads(config.SYNC_STATE_PATH.read_text())
-            last_sync = state.get("synced_at")
-        except (json.JSONDecodeError, KeyError):
+            if isinstance(state, dict):
+                last_sync = state.get("synced_at")
+        except (OSError, ValueError):
             pass
 
     return {

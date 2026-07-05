@@ -116,12 +116,6 @@ def test_incremental_sync_only_updates_changed(mock_reader, note_store_sync, syn
     assert note_store_sync.get_stats()["count"] == count_after_first
 
 
-def _indexed_pks(store: NoteStore) -> set[int]:
-    """Read the set of note PKs currently present in the store's collection."""
-    raw = store._collection.get(include=["metadatas"])
-    return {int(m["note_pk"]) for m in raw["metadatas"]}
-
-
 def test_sync_removes_archived_note_chunks(
     mock_reader, note_store_sync, sync_state_path, bear_db
 ):
@@ -133,7 +127,7 @@ def test_sync_removes_archived_note_chunks(
     verification was inconclusive). Reconciliation must catch it regardless.
     """
     sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
-    assert 1 in _indexed_pks(note_store_sync), "note 1 should be indexed initially"
+    assert 1 in note_store_sync.indexed_note_pks(), "note 1 should be indexed initially"
 
     # Archive note 1 in Bear, leaving ZMODIFICATIONDATE untouched.
     conn = sqlite3.connect(str(bear_db))
@@ -144,7 +138,7 @@ def test_sync_removes_archived_note_chunks(
     result = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
 
     assert result.notes_deleted == 1
-    assert 1 not in _indexed_pks(note_store_sync), "archived note's chunks must be gone"
+    assert 1 not in note_store_sync.indexed_note_pks(), "archived note's chunks must be gone"
 
 
 def test_second_sync_after_archive_is_idempotent(
@@ -216,12 +210,8 @@ def test_full_index_resets_and_syncs(mock_reader, note_store_sync, sync_state_pa
     stats = note_store_sync.get_stats()
     assert stats["count"] > 0
 
-    # Verify stale chunk id "999_0" is no longer present by checking note PKs in store
-    # (query with a broad search and verify 999 is absent from results)
-    from bear_rag.store import NoteStore
-    raw = note_store_sync._collection.get()
-    note_pks_in_store = {m["note_pk"] for m in raw["metadatas"]}
-    assert 999 not in note_pks_in_store
+    # Verify stale chunk id "999_0" is no longer present.
+    assert 999 not in note_store_sync.indexed_note_pks()
 
     assert result.notes_updated == 3
     assert result.chunks_added > 0
