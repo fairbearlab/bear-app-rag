@@ -10,7 +10,8 @@ Context: Phase 1 (initial design)
 
 ## Context
 
-Chunk size is the most consequential tuning decision in a RAG pipeline. Too large and the embedding loses specificity (the vector represents "a bit of everything"). Too small and the chunk lacks enough context to be useful as retrieved evidence.
+Chunk size materially affects retrieval. Large chunks mix several subjects into one vector;
+small chunks may not contain enough context to be useful evidence.
 
 Bear notes range from one-line todos to multi-page essays with nested headings. A single chunking strategy must handle both.
 
@@ -31,7 +32,8 @@ Each chunk carries `heading_path` metadata (e.g., `"# Main > ## Sub-section"`) s
 
 **Recursive character splitting (LangChain-style):** Tries paragraph → sentence → character boundaries. Better than fixed-size but still ignores the document's heading hierarchy, which is the strongest semantic signal in Markdown.
 
-**Sentence-level splitting:** Very fine-grained. Good for Q&A but produces too many tiny chunks for note-length content, and the overhead of one embedding per sentence isn't justified.
+**Sentence-level splitting:** Precise, but it produces many fragments for note-length
+content and charges one embedding to sentences that often need their neighbors for context.
 
 ## Consequences
 

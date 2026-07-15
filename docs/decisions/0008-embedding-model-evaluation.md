@@ -12,19 +12,19 @@ Context: Phase 5 (forward-looking evaluation). Amends [ADR-0002](0002-local-onnx
 
 [ADR-0002](0002-local-onnx-embeddings.md) chose all-MiniLM-L6-v2 (384-dim, ONNX
 via ChromaDB's `DefaultEmbeddingFunction`) for local, no-network embeddings. That
-choice was made on reputation, not measurement. Since then the open-weight
-retrieval-model field has moved: BGE, GTE, Snowflake Arctic, and Nomic all ship
-small/base models that beat MiniLM on public benchmarks like MTEB.
+choice was made on reputation rather than a project-specific comparison. BGE,
+GTE, Snowflake Arctic, and Nomic provide small or base models with stronger
+scores than MiniLM on public benchmarks such as MTEB.
 
 The question this ADR answers: **on _this_ corpus and these metrics, is any of
 them enough of an improvement to justify switching?** A switch is not free — a
 dimension change forces a full re-index, larger models cost disk and cold-start
-latency, and any new model has to stay license-clean (MIT/Apache-2.0) and
+latency, and any new model must use a compatible MIT or Apache-2.0 license and
 no-network at inference to preserve the ADR-0002 guarantee.
 
 ## Method
 
-The existing eval harness (`tests/eval/`) is the objective scorer: 25 notes, 20
+The existing eval harness (`tests/eval/`) provides the scorer: 25 notes, 20
 queries across four query types (exact_match, multi_concept, paraphrase,
 synonym), scored on Recall@5, MRR, and keyword Groundedness — the same metrics as
 the committed RAG-vs-keyword benchmark. `NoteStore` gained an optional
@@ -41,12 +41,12 @@ HuggingFace, then run fully offline — the same one-time-download / offline-aft
 property MiniLM has.
 
 **Candidate pool** (small/base English retrieval models, ONNX-via-fastembed,
-MIT/Apache-2.0): `bge-small-en-v1.5`, `bge-base-en-v1.5`, `gte-base`,
+MIT or Apache-2.0): `bge-small-en-v1.5`, `bge-base-en-v1.5`, `gte-base`,
 `snowflake-arctic-embed-s`, `snowflake-arctic-embed-m`, `nomic-embed-text-v1.5`.
 **e5 and gte-small are intentionally absent**: fastembed does not package them as
 ONNX, so running them would require sentence-transformers + PyTorch (~2GB) —
-exactly the dependency weight ADR-0002 rejected. Choosing the candidate set _was_
-a feasibility filter.
+the dependency weight ADR-0002 rejected. The candidate set therefore reflects
+runtime feasibility as well as benchmark reputation.
 
 ## Results
 
@@ -62,9 +62,9 @@ a feasibility filter.
 
 (Full per-query-type breakdown in `tests/eval/embedding_comparison.md`.)
 
-Reading the table at face value, nomic-embed-text-v1.5 looks like the winner:
+The aggregate table favors nomic-embed-text-v1.5:
 +0.05 recall, +0.02 groundedness, and it wins the synonym and multi_concept
-subsets outright. But that face-value read does not survive scrutiny.
+subsets outright. The sample size does not establish that lead reliably.
 
 ## Decision
 
@@ -122,12 +122,12 @@ change) and document the one-time re-index in the README.
   asserted — and the harness to re-measure exists and is committed.
 - `NoteStore` is model-swappable, so a future switch is a one-line change plus a
   re-index, not a refactor.
-- The candidate-pool feasibility filter (no-torch, ONNX, license-clean) is
+- The candidate-pool feasibility filter (no PyTorch, ONNX, compatible license) is
   documented, so the "why not e5/gte-small" question is answered.
 
 ### Negative
-- The verdict rests on an underpowered n=20 corpus; it is honest about that, but
-  it means "keep" is provisional pending a larger corpus.
+- The verdict rests on an underpowered n=20 corpus, so "keep" remains provisional
+  pending a larger comparison.
 - `fastembed` is an extra (research-only) dependency to maintain, even though it
   never ships at runtime.
 
