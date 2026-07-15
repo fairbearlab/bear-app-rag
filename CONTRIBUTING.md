@@ -5,7 +5,7 @@
 ```shell
 git clone https://github.com/fairbearlab/bear-app-rag.git
 cd bear-app-rag
-uv sync
+uv sync --extra dev
 uv run pytest -v
 uv run pytest -m eval -v
 ```
@@ -20,28 +20,32 @@ uv run bear-rag demo
 
 ## Architecture
 
-Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a full tour of every module.
+Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the current module boundaries and
+data flow.
 
 ## Design Decisions
 
-Check [docs/decisions/](docs/decisions/) for ADRs explaining why things are the way they are. If your change contradicts an existing ADR, write a new ADR documenting why.
+Check [docs/decisions/](docs/decisions/) before changing an established boundary. If the
+old decision no longer fits, add or amend an ADR and explain what changed.
 
 ## Code Style
 
-- Python 3.11+ type hints
-- pytest for testing
-- No new production dependencies without an ADR
+- Use Python 3.11+ type hints.
+- Add pytest coverage for behavior changes and regressions.
+- Do not add a production dependency without recording why it belongs in the installed
+  package.
 
 ## What to Work On
 
 - Issues labeled "good first issue"
-- [Roadmap / Future Work](docs/EVALUATION.md#roadmap--future-work) for deferred eval improvements
-- The eval corpus can always use more notes and queries
+- [Next useful eval work](docs/EVALUATION.md#next-useful-work) for deferred improvements
+- The eval corpus needs more retrieval-quality notes and queries before stronger model
+  claims are justified.
 
 ## Running Tests
 
 ```shell
-uv run pytest -v              # Unit tests (139 tests)
-uv run pytest -m eval -v      # Eval suite (27 tests)
-uv run pytest -v -m ""        # All tests
+uv run pytest -v              # Default suite; eval-marked tests are excluded
+uv run pytest -m eval -v      # Eval-marked tests only
+uv run pytest -v -m ""        # Entire suite
 ```
