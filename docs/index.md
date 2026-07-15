@@ -4,15 +4,16 @@ title: bear-app-rag
 
 # bear-app-rag
 
-Local-first semantic search for [Bear](https://bear.app) notes. 4 direct dependencies. Zero frameworks. Provable benchmarks.
+Local-first semantic search for [Bear](https://bear.app) notes. The installed package has
+two direct dependencies, uses local ONNX embeddings, and exposes retrieval through MCP.
 
 ## Documentation
 
-- **[Architecture](ARCHITECTURE.html)** -- How the pipeline works, module by module
-- **[Building a Production RAG Pipeline Without LangChain](BUILDING.html)** -- The full technical essay
-- **[Evaluation Methodology](EVALUATION.html)** -- How we prove RAG beats keyword search
-- **[Benchmark Visualization](benchmarks/)** -- SVG charts of the eval results
-- **[Architecture Decision Records](decisions/)** -- 7 ADRs documenting key design choices
+- **[Architecture](ARCHITECTURE.html)** -- The current pipeline, module by module
+- **[Building a RAG Pipeline Without LangChain](BUILDING.html)** -- The engineering choices and corrections behind the project
+- **[Evaluation Methodology](EVALUATION.html)** -- What the benchmark measures and where its conclusions stop
+- **[Benchmark Visualization](benchmarks/)** -- Charts generated from the committed eval artifact
+- **[Architecture Decision Records](decisions/)** -- Eight decisions, including the later embedding-model comparison
 
 ## Quick Links
 

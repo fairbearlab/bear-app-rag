@@ -1,29 +1,43 @@
 # bear-app-rag
 
-Local-first semantic search for [Bear](https://bear.app) notes. Indexes your notes with local ONNX embeddings, proves it works with a hand-rolled eval, and serves results to AI agents via MCP.
+Local-first semantic search for [Bear](https://bear.app) notes. It reads Bear's
+SQLite database without modifying it, builds a local ONNX vector index, and exposes
+retrieval through MCP.
 
-2 direct dependencies. Zero frameworks. [Provable benchmarks](#benchmark-results).
+Two production dependencies. No orchestration framework. A committed eval shows where
+semantic search beats keyword matching and where it does not.
 
-## Why This Exists
+## Why this exists
 
-Bear has no API. Your notes are locked in a SQLite database. Existing Bear integrations pass entire notes to AI, which breaks past ~50 notes. bear-app-rag chunks your notes, embeds them locally, and retrieves the most relevant chunks via semantic search.
+I keep enough material in Bear that remembering the idea is easier than remembering the
+words I used. Bear has no public API, and keyword search cannot connect a query such as
+"software releases without downtime" with a note about blue-green deployments unless the
+wording happens to overlap.
 
-**The key claim:** RAG retrieval beats keyword matching by 40% on paraphrase queries. [See the benchmark results.](#benchmark-results)
+Sending an entire vault to a model is not a retrieval strategy. This project reads the
+local database, splits notes along their Markdown structure, embeds the chunks on-device,
+and returns only the relevant excerpts.
 
-## Quickstart (5 minutes)
+On the committed synthetic eval, semantic retrieval improves paraphrase recall from 0.60
+to 1.00. The control group ties at 1.00, and the multi-concept group is a useful reminder
+that vector search does not win every ranking contest.
 
-**Prerequisites:** macOS, Python 3.11+, [Bear](https://bear.app) installed with some notes. The `pip` quickstart below needs nothing more; for local development, the MCP server, or the cron auto-sync you'll also want [uv](https://astral.sh/uv).
+## Quickstart
+
+Prerequisites: macOS, Python 3.11+, and [Bear](https://bear.app) with at least one note.
 
 ```shell
 pip install git+https://github.com/fairbearlab/bear-app-rag.git
 bear-rag index
 ```
 
-First index takes ~30s extra to download the embedding model (~90MB, one-time). Subsequent runs are instant.
+The first index downloads the roughly 90 MB embedding model. Later indexing and search
+can run offline.
 
-### MCP Server
+### MCP server
 
-The MCP server is the primary interface: it lets an AI agent like Claude Code search your notes directly during a conversation, instead of you running CLI commands by hand. Add to `.mcp.json`:
+The MCP server is the main interface. It lets a connected agent search, browse, read, and
+sync notes during a conversation. For a source checkout, add this to `.mcp.json`:
 
 ```json
 {
@@ -36,9 +50,8 @@ The MCP server is the primary interface: it lets an AI agent like Claude Code se
 }
 ```
 
-Claude Code can then search your notes during conversation.
-
-The same stdio server should work with any MCP-compatible host (for example Codex CLI, GitHub Copilot's agent mode, or the Claude desktop app) — point that host's MCP config at the same `bear-rag-mcp` command shown above. Only the Claude Code config above is tested; treat the others as starting points.
+This configuration is tested with Claude Code. Other MCP hosts can use the same stdio
+command, but their configuration shape may differ.
 
 ### Auto-sync with cron
 
@@ -46,141 +59,163 @@ The same stdio server should work with any MCP-compatible host (for example Code
 */15 * * * * cd /path/to/bear-app-rag && uv run bear-rag sync --quiet >> ~/.bear-rag/sync.log 2>&1
 ```
 
-## How It Works
+## How it works
 
 ```mermaid
 flowchart LR
-    subgraph local["On-device (no network)"]
+    subgraph local["On-device"]
         DB[("Bear SQLite DB<br/>(read-only)")] --> BR["BearReader<br/>bear_reader.py"]
         BR --> CH["Chunker<br/>chunker.py"]
-        CH --> NS["NoteStore (ChromaDB)<br/>store.py<br/>ONNX embeddings, local vector store"]
-        NS --> MCP["MCP Server<br/>mcp_server.py"]
-        NS --> CLI["CLI<br/>cli.py<br/>(admin only: index/sync/status)"]
+        CH --> NS["NoteStore<br/>ChromaDB + local ONNX embeddings"]
+        NS --> MCP["MCP server<br/>6 tools"]
+        NS --> CLI["CLI<br/>index / sync / status / demo"]
     end
-    MCP -. "returns chunks" .-> Agent["Connected AI agent<br/>(trust boundary, opt-in)"]
+    MCP -. "returns selected note content" .-> Agent["Connected agent<br/>(opt-in trust boundary)"]
 ```
 
-The installed package has zero cloud dependency, and the index/search/sync path never egresses: your notes are read, chunked, and embedded on-device via ONNX Runtime, and the only network call on that path is the one-time model download. There is one documented, opt-in boundary: the MCP server hands retrieved chunks to whatever agent is connected (that agent, not this codebase, generates the answer). Dev tooling has a second, separate opt-in caller — the LLM-judge eval harness — that never ships with the package (see [Development](#development)). See [ADR-0002](docs/decisions/0002-local-onnx-embeddings.md) for the full privacy audit.
+The installed package has no cloud SDK. Indexing, sync, and search do not initiate network
+requests after the one-time model download. ChromaDB telemetry is disabled through both
+its runtime settings and an import-time environment default.
 
-[Read the full architecture tour.](docs/ARCHITECTURE.md)
+That boundary ends where the MCP handoff begins: a connected agent receives retrieved note
+content and may use its own network services. The optional development-only LLM judge also
+calls Anthropic when explicitly enabled. Those are opt-in boundaries, not properties of the
+indexing path. [ADR-0002](docs/decisions/0002-local-onnx-embeddings.md) records the full scope.
 
-## Benchmark Results
+[Read the architecture tour.](docs/ARCHITECTURE.md)
 
-RAG vs keyword (SQLite LIKE) retrieval on a 25-note synthetic corpus with 20 eval queries across four query types. Results from `tests/eval/results.json`.
+## Benchmark results
 
-Four metrics, all higher = better: **Recall@5** is the fraction of expected notes that appear in the top 5 results; **MRR** captures how high the first correct note ranks (1.0 = always first); **Groundedness** is the fraction of expected keywords present in the retrieved text; **LLM-Judge Groundedness** is Claude scoring (0.0–1.0) how well the retrieved text actually supports answering the query, run on both retrieval paths. Full definitions are in [EVALUATION.md](docs/EVALUATION.md).
+The committed eval compares local semantic retrieval with a SQLite `LIKE` baseline on 25
+synthetic notes and 23 queries. Twenty queries cover exact match, synonym, paraphrase, and
+multi-concept retrieval. Three more exercise tag-filter correctness end to end.
 
-### Aggregate Metrics
+Results come from `tests/eval/results.json`. All three reported metrics are deterministic
+and higher is better:
 
-| Metric | RAG | Keyword (LIKE) |
-|--------|-----|----------------|
-| Recall@5 | 0.92 | 0.76 |
-| MRR | 0.90 | 0.76 |
-| Groundedness | 0.86 | 0.80 |
-| LLM-Judge Groundedness | 0.71 | 0.65 |
+- **Recall@5:** fraction of expected notes present in the top five results.
+- **MRR:** reciprocal rank of the first expected result.
+- **Groundedness:** fraction of expected keywords present in retrieved text.
 
-The keyword-overlap and LLM-judge groundedness metrics agree: RAG retrieves text that better supports the answer (judge 0.71 vs 0.65 overall), with the gap widest on the paraphrase queries it targets (0.72 vs 0.55).
+| Metric | Semantic | Keyword (`LIKE`) |
+|--------|----------|------------------|
+| Recall@5 | 0.90 | 0.75 |
+| MRR | 0.91 | 0.79 |
+| Groundedness | 0.87 | 0.80 |
 
-### By Query Type
+### By query type
 
-| Query Type | Count | Recall RAG | Recall LIKE | MRR RAG | MRR LIKE |
-|------------|-------|------------|-------------|---------|----------|
-| exact\_match | 5 | 1.00 | 1.00 | 1.00 | 1.00 |
-| multi\_concept | 5 | 0.83 | 0.73 | 0.84 | 0.90 |
-| paraphrase | 5 | 1.00 | 0.60 | 0.77 | 0.44 |
-| synonym | 5 | 0.83 | 0.70 | 1.00 | 0.70 |
+| Query type | Count | Recall semantic | Recall `LIKE` | MRR semantic | MRR `LIKE` |
+|------------|-------|-----------------|---------------|--------------|------------|
+| `exact_match` | 5 | 1.00 | 1.00 | 1.00 | 1.00 |
+| `multi_concept` | 5 | 0.83 | 0.73 | 0.84 | 0.90 |
+| `paraphrase` | 5 | 1.00 | 0.60 | 0.77 | 0.44 |
+| `synonym` | 5 | 0.83 | 0.70 | 1.00 | 0.70 |
+| `tag_multi_or` | 1 | 1.00 | 0.67 | 1.00 | 1.00 |
+| `tag_no_match` | 1 | 1.00 | 1.00 | 1.00 | 1.00 |
+| `tag_single` | 1 | 0.33 | 0.33 | 1.00 | 1.00 |
 
-RAG wins on paraphrase (+40% recall, +33% MRR) and synonym (+13% recall, +30% MRR) queries. On exact-match queries (the control group), both methods tie at 1.00, confirming the baseline is fair. The honest exception is multi_concept: RAG retrieves more of the expected notes (recall 0.83 vs 0.73) but the keyword baseline ranks its first hit higher (MRR 0.90 vs 0.84). That gap is driven by a single query ("weekend projects combining outdoor activity with food"), where RAG's first relevant hit lands at rank 5 and LIKE's at rank 2; the other four multi_concept queries tie at MRR 1.00. RAG does not win on every query type, and the table is the honest picture.
+The core result is specific: semantic retrieval is much better when the query paraphrases
+the note, and no better when the exact words are already present. On multi-concept queries,
+semantic retrieval finds more expected notes but ranks its first relevant result slightly
+lower. That is a tradeoff worth reporting, not rounding away.
 
-### Side-by-Side Examples
+### Side-by-side examples
 
 **Query:** "What makes products easy to use without reading instructions?"
 
-- **RAG returns:** Design of Everyday Things, Recipe Ingredient Tracker, Road Trip Planning
+- **Semantic returns:** Recipe Ingredient Tracker, The Design of Everyday Things, Road Trip Planning
 - **Keyword returns:** Atomic Habits, Code Review Checklist, Budget Backpacking
-- *RAG found the Design of Everyday Things note (affordances, signifiers); keyword missed it because "instructions" and "easy to use" don't appear verbatim.*
+- The relevant note discusses affordances and signifiers. Keyword search cannot recover a
+  concept whose query vocabulary never appears in the note.
 
 **Query:** "How should I write software interfaces that other developers will enjoy using?"
 
-- **RAG returns:** Pragmatic Programmer, Deploying Python Apps, API Design Best Practices
-- **Keyword returns:** Design of Everyday Things, Atomic Habits, Thai Green Curry
-- *RAG placed the API Design note in the top results; keyword missed it because "interfaces" appears in unrelated contexts.*
+- **Semantic returns:** The Pragmatic Programmer, Deploying Python Apps, API Design Best Practices
+- **Keyword returns:** The Design of Everyday Things, Atomic Habits, Thai Green Curry
+- Semantic search places the API design note in the results; keyword search finds unrelated
+  uses of "design" and "interfaces."
 
-[View benchmark visualization](docs/benchmarks/) | [Eval methodology](docs/EVALUATION.md)
+[View the benchmark visualization](docs/benchmarks/) or read the
+[evaluation methodology](docs/EVALUATION.md).
 
-## Design Decisions
+## Design decisions
 
-Key architectural choices, documented as [ADRs](docs/decisions/):
+The [ADRs](docs/decisions/) record the choices and their limits:
 
-- **[No LangChain](docs/decisions/0001-no-langchain.md)** -- 2 direct deps, not 50+ transitive
-- **[Local ONNX Embeddings](docs/decisions/0002-local-onnx-embeddings.md)** -- No note data leaves the machine
-- **[Markdown-Aware Chunking](docs/decisions/0003-chunk-sizing-strategy.md)** -- Split on headings, not character count
-- **[MCP as Primary Interface](docs/decisions/0004-mcp-as-primary-interface.md)** -- AI agents are the primary users
-- **[Incremental Sync](docs/decisions/0005-incremental-sync-via-timestamps.md)** -- Core Data timestamps for change detection
-- **[Hand-Rolled Eval](docs/decisions/0006-hand-rolled-eval-framework.md)** -- pytest + JSON fixtures, no eval framework
-- **[MIT License](docs/decisions/0007-mit-license.md)** -- Maximum adoption
+- [No LangChain](docs/decisions/0001-no-langchain.md): direct calls fit this pipeline.
+- [Local ONNX embeddings](docs/decisions/0002-local-onnx-embeddings.md): note content stays local during retrieval.
+- [Markdown-aware chunking](docs/decisions/0003-chunk-sizing-strategy.md): headings are better boundaries than character counts.
+- [MCP as the primary interface](docs/decisions/0004-mcp-as-primary-interface.md): the CLI handles administration; MCP handles retrieval.
+- [Incremental sync](docs/decisions/0005-incremental-sync-via-timestamps.md): timestamps find changes; reconciliation removes stale notes.
+- [Hand-rolled eval](docs/decisions/0006-hand-rolled-eval-framework.md): pytest and JSON are enough for this benchmark.
+- [MIT license](docs/decisions/0007-mit-license.md): permissive distribution.
+- [Embedding-model evaluation](docs/decisions/0008-embedding-model-evaluation.md): keep MiniLM until stronger evidence justifies the cost of switching.
 
-[Read the full story: Building a Production RAG Pipeline Without LangChain](docs/BUILDING.md)
+[Read the longer engineering narrative.](docs/BUILDING.md)
 
-## CLI Reference
+## CLI reference
 
 ```shell
-bear-rag index              # Full rebuild -- wipe and re-index all notes
-bear-rag sync               # Incremental update since last sync
-bear-rag sync --dry-run     # Preview what would change
-bear-rag status             # Show index stats and last sync time
-bear-rag demo               # Self-contained benchmark demo (no Bear DB required)
+bear-rag index              # Wipe and rebuild the index
+bear-rag sync               # Incremental update from Bear
+bear-rag sync --dry-run     # Preview updates and deletions
+bear-rag sync --quiet       # Print only when something changed
+bear-rag status             # Show index statistics and last sync time
+bear-rag demo               # Run a self-contained demo without Bear
 ```
 
-## Project Structure
+## Project structure
 
 | Module | Purpose |
 |--------|---------|
-| `bear_reader.py` | Reads notes and tags from Bear's SQLite database |
-| `chunker.py` | Markdown-aware splitting at headings with overlap |
-| `store.py` | ChromaDB collection management with ONNX embeddings |
-| `sync.py` | Incremental sync with timestamp-based change detection |
-| `cli.py` | argparse entry point with subcommands |
-| `mcp_server.py` | MCP server exposing 6 tools: search, read, list, tags, sync, status |
-| `demo.py` | Self-contained benchmark demo with inline corpus |
-| `config.py` | Constants, embedding model pin, telemetry disable |
+| `bear_reader.py` | Read notes, tags, and live note state from Bear's SQLite database |
+| `chunker.py` | Split Markdown along headings with bounded overlap |
+| `store.py` | Persist and query ONNX embeddings through ChromaDB |
+| `sync.py` | Update changed notes and reconcile stale indexed notes |
+| `mcp_server.py` | Expose search, read, browse, sync, and status tools |
+| `cli.py` | Provide index, sync, status, and demo commands |
+| `status.py` | Read shared index and sync-state statistics |
+| `demo.py` | Run the small, self-contained retrieval demonstration |
+| `config.py` | Define paths, chunk settings, model choice, and telemetry defaults |
+| `models.py` | Define notes, chunks, metadata, and sync results |
 
 ## Configuration
 
-All constants live in `bear_rag/config.py`:
+The defaults live in `bear_rag/config.py`:
 
-| Constant | Default | Description |
-|----------|---------|-------------|
-| `BEAR_DB_PATH` | `~/Library/Group Containers/.../database.sqlite` | Bear SQLite database path |
-| `DATA_DIR` | `~/.bear-rag` | Persistent state directory |
-| `CHROMA_DIR` | `~/.bear-rag/chroma` | ChromaDB storage |
-| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Pinned embedding model |
-| `MAX_CHUNK_WORDS` | 300 | Target max words per chunk (~390 tokens) |
-| `MIN_CHUNK_WORDS` | 30 | Below this, merge into adjacent chunk |
-| `OVERLAP_WORDS` | 40 | Word overlap when splitting oversized chunks |
+| Constant | Default | Purpose |
+|----------|---------|---------|
+| `BEAR_DB_PATH` | Bear's group-container SQLite path | Read-only source database |
+| `DATA_DIR` | `~/.bear-rag` | Local state directory |
+| `CHROMA_DIR` | `~/.bear-rag/chroma` | Vector index storage |
+| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Documented production model |
+| `MAX_CHUNK_WORDS` | `300` | Maximum target chunk size |
+| `MIN_CHUNK_WORDS` | `30` | Merge threshold for small sections |
+| `OVERLAP_WORDS` | `40` | Context repeated across oversized splits |
 
 ## Development
 
 ```shell
 git clone https://github.com/fairbearlab/bear-app-rag.git
 cd bear-app-rag
-uv sync --all-extras       # Install with dev dependencies
-uv run bear-rag index      # Build the index
-uv run pytest -v           # Run tests (139 unit tests)
-uv run pytest -m eval -v   # Run eval suite (27 eval tests)
-uv run bear-rag demo       # Run self-contained benchmark demo
+uv sync --extra dev
+uv run pytest -v
+uv run pytest -m eval -v
+uv run bear-rag demo
 ```
 
-With the optional LLM judge (requires `ANTHROPIC_API_KEY`):
+The optional LLM judge requires `ANTHROPIC_API_KEY` and an explicit flag:
 
 ```shell
 EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
 ```
 
-Regenerate all presentation artifacts:
+The alternate-model research harness has a separate extra:
 
 ```shell
-bash scripts/showcase.sh
+uv sync --extra research
+uv run python tests/eval/embedding_sweep.py --list
 ```
 
 ## License
