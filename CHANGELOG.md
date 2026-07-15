@@ -2,6 +2,23 @@
 
 All notable changes to bear-rag will be documented in this file.
 
+## [0.4.1] - 2026-07-15
+
+### Changed
+
+- Rewrote the README, engineering narrative, architecture guide, evaluation reference,
+  contributor guide, and ADRs in a consistent candid technical voice. The docs now lead
+  with project boundaries and evidence instead of review-process claims.
+- Corrected documentation drift after the `ask` removal and RAG-engine hardening: removed
+  the deleted generator and `$contains` query engine, documented active-note reconciliation
+  and live-tag snapshot semantics, updated the module and CLI references, and replaced stale
+  test counts with commands that do not need manual maintenance.
+- Updated benchmark documentation from the current 23-query artifact (20 retrieval-quality
+  queries plus three tag-filter gates). Historical LLM-judge values are no longer presented
+  as current results because `results.json` does not contain judge scores for this artifact.
+- Made the benchmark visualization derive its query and query-type counts from
+  `tests/eval/results.json`, then regenerated the published HTML.
+
 ## [0.4.0] - 2026-06-29
 
 ### Added
