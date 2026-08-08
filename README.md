@@ -1,8 +1,10 @@
 # bear-app-rag
 
-Local-first semantic search for [Bear](https://bear.app) notes. It reads Bear's SQLite database without modifying it, builds a local ONNX vector index, and let’s agents retrieve through MCP.
+Local-first semantic search for [Bear](https://bear.app) notes. It reads Bear's SQLite database without modifying it, builds a local ONNX vector index, and lets agents retrieve through MCP.
 
 Minimal by design. Two production dependencies. No orchestration framework. An eval shows where semantic search beats keyword matching and where it does not.
+
+If you would rather read the long-form material in one place, it is published at **[fairbearlab.github.io/bear-app-rag](https://fairbearlab.github.io/bear-app-rag/)**: the architecture tour, the story of building it, what the eval does and does not measure, and the eight decision records. The benchmark charts only render there.
 
 ## Why this exists
 
@@ -112,7 +114,7 @@ The core result: semantic retrieval is much better when the query paraphrases th
 - **Keyword returns:** The Design of Everyday Things, Atomic Habits, Thai Green Curry
 - Semantic search places the API design note in the results; keyword search finds unrelated uses of "design" and "interfaces."
 
-[View the benchmark visualization](docs/benchmarks/) or read the [evaluation methodology](docs/EVALUATION.md).
+[See the charts](https://fairbearlab.github.io/bear-app-rag/benchmarks/) or read the [evaluation methodology](docs/EVALUATION.md).
 
 ## Design decisions
 
