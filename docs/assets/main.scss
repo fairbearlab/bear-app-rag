@@ -24,9 +24,10 @@ $grey-color:       #6f665c;
 $grey-color-light: #e4dcd1;
 $grey-color-dark:  #453f38;
 
-// 720px keeps the prose measure near 70 characters. Tables and diagrams break
-// out past it below.
-$content-width:    720px;
+// Sized so the widest table (752px of content, in EVALUATION) fits without
+// wrapping, giving one column width for prose, tables, and diagrams alike.
+// Costs some prose measure: ~88 characters against an ideal of 66-75.
+$content-width:    824px;
 $on-palm:          600px;
 $on-laptop:        800px;
 
@@ -308,15 +309,6 @@ table {
   margin: $spacing-unit * 0.9 0;
   text-align: center;
   overflow-x: auto;
-}
-
-@media screen and (min-width: 940px) {
-  .post-content > table,
-  .post-content > pre.mermaid {
-    width: calc(100% + 150px);
-    max-width: none;
-    margin-left: -75px;
-  }
 }
 
 @include media-query($on-palm) {
