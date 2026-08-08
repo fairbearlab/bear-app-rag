@@ -1,5 +1,6 @@
 ---
 title: Architecture
+nav_title: Architecture
 ---
 
 # Architecture
@@ -139,20 +140,3 @@ See [EVALUATION.md](EVALUATION.md) for the method and [ADR-0006](decisions/0006-
 | `demo.py` | Self-contained retrieval demonstration |
 | `config.py` | Paths, telemetry defaults, model name, and chunk settings |
 | `models.py` | Note, chunk, metadata, and sync result types |
-
-<script type="module">
-  // GitHub renders ```mermaid fences natively; Jekyll does not. Kramdown emits them
-  // as .language-mermaid code blocks, so unwrap those and hand them to Mermaid.
-  const blocks = document.querySelectorAll(".language-mermaid");
-  if (blocks.length) {
-    const mermaid = (await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs")).default;
-    blocks.forEach((block) => {
-      const pre = document.createElement("pre");
-      pre.className = "mermaid";
-      pre.textContent = block.textContent;
-      block.replaceWith(pre);
-    });
-    mermaid.initialize({ startOnLoad: false });
-    await mermaid.run();
-  }
-</script>

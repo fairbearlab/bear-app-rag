@@ -1,0 +1,48 @@
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {%- seo -%}
+  <link rel="icon" href="{{ "/assets/favicon.svg" | relative_url }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="{{ "/assets/main.css" | relative_url }}">
+  {%- feed_meta -%}
+
+  <script type="module">
+    // GitHub renders ```mermaid fences natively; Jekyll does not. Kramdown emits
+    // them as .language-mermaid code blocks, so unwrap those and hand them to
+    // Mermaid. Pages with no diagram never load the library.
+    const blocks = document.querySelectorAll(".language-mermaid");
+    if (blocks.length) {
+      const mermaid = (await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs")).default;
+      blocks.forEach((block) => {
+        const pre = document.createElement("pre");
+        pre.className = "mermaid";
+        pre.textContent = block.textContent;
+        // Replace the enclosing figure kramdown wraps the code in, not just the
+        // <code>, or the diagram inherits code-block styling.
+        (block.closest(".highlighter-rouge") || block.closest("pre") || block).replaceWith(pre);
+      });
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "base",
+        fontFamily: '"IBM Plex Sans", system-ui, sans-serif',
+        themeVariables: {
+          fontSize: "15px",
+          background: "#fdfcfa",
+          primaryColor: "#f2ebe1",
+          primaryTextColor: "#1c1a17",
+          primaryBorderColor: "#c4b8a8",
+          secondaryColor: "#f7f2ea",
+          tertiaryColor: "#fbf8f4",
+          lineColor: "#8a7f72",
+          clusterBkg: "#fbf8f4",
+          clusterBorder: "#ddd3c6"
+        }
+      });
+      await mermaid.run();
+    }
+  </script>
+</head>

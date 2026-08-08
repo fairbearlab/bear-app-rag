@@ -1,0 +1,332 @@
+---
+# Front matter (even empty) is what tells Jekyll to compile this file.
+# It overrides minima's own assets/main.scss.
+---
+
+// ---------------------------------------------------------------------------
+// minima variable overrides. These must precede the import: minima declares
+// each one with !default, so the first definition wins.
+// ---------------------------------------------------------------------------
+
+$base-font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+$base-font-size:   17px;
+$base-font-weight: 400;
+$small-font-size:  15px;
+$base-line-height: 1.65;
+
+$spacing-unit:     32px;
+
+$text-color:       #1c1a17;
+$background-color: #fdfcfa;
+$brand-color:      #a8481a;
+
+$grey-color:       #6f665c;
+$grey-color-light: #e4dcd1;
+$grey-color-dark:  #453f38;
+
+// 720px keeps the prose measure near 70 characters. Tables and diagrams break
+// out past it below.
+$content-width:    720px;
+$on-palm:          600px;
+$on-laptop:        800px;
+
+@import "minima";
+
+// ---------------------------------------------------------------------------
+// Type scale. minima ships every heading at weight 400, which leaves the page
+// with no hierarchy beyond size. Ratio is 1.25 from a 17px base.
+// ---------------------------------------------------------------------------
+
+$mono-font: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+$rule-color: #e6ded3;
+$surface-color: #f7f2ea;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.011em;
+  color: #14120f;
+}
+
+h1 { font-size: 34px; letter-spacing: -0.021em; }
+h2 { font-size: 25px; }
+h3 { font-size: 20px; }
+h4 { font-size: 17px; }
+h5, h6 { font-size: 15px; }
+
+// A heading belongs to the section it introduces, so it sits closer to the text
+// below it than to the block above.
+.post-content {
+  h2 { margin-top: $spacing-unit * 1.5; margin-bottom: $spacing-unit * 0.4; }
+  h3 { margin-top: $spacing-unit * 1.1; margin-bottom: $spacing-unit * 0.3; }
+  h4 { margin-top: $spacing-unit * 0.9; margin-bottom: $spacing-unit * 0.25; }
+
+  > h2 {
+    padding-top: $spacing-unit * 0.5;
+    border-top: 1px solid $rule-color;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Page title. The layout no longer emits one, so the document's own opening
+// H1 carries the role.
+// ---------------------------------------------------------------------------
+
+.post-content > h1:first-child {
+  font-size: 40px;
+  line-height: 1.15;
+  letter-spacing: -0.024em;
+  margin-bottom: $spacing-unit * 0.75;
+}
+
+// ---------------------------------------------------------------------------
+// Links. Visited links keep a distinct colour so readers can see where they
+// have already been in the docs.
+// ---------------------------------------------------------------------------
+
+a {
+  color: $brand-color;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+
+  &:visited { color: #7d4a33; }
+  &:hover   { color: #14120f; text-decoration-color: currentColor; }
+}
+
+.post-content a { text-decoration: underline; }
+
+// ---------------------------------------------------------------------------
+// Header
+// ---------------------------------------------------------------------------
+
+.site-header {
+  border-top: none;
+  border-bottom: 1px solid $rule-color;
+  background-color: $background-color;
+  min-height: 0;
+  padding: $spacing-unit * 0.55 0;
+}
+
+.site-title {
+  font-family: $mono-font;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: $text-color;
+
+  &:visited { color: $text-color; }
+  &:hover   { color: $brand-color; text-decoration: none; }
+}
+
+.site-nav {
+  line-height: 1.5;
+
+  .page-link {
+    color: $grey-color;
+    font-size: 15px;
+    margin-left: $spacing-unit * 0.75;
+    text-decoration: none;
+
+    &:hover { color: $text-color; }
+  }
+
+  .page-link--current {
+    color: $text-color;
+    box-shadow: inset 0 -2px 0 $brand-color;
+  }
+
+  @include media-query($on-palm) {
+    border: 1px solid $rule-color;
+    border-radius: 6px;
+    background-color: $background-color;
+    min-width: 190px;
+    text-align: left; // minima right-aligns the mobile dropdown
+
+    // 44px minimum tap target: 15px text at 1.5 line-height needs 11px padding.
+    label[for="nav-trigger"] {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page-link {
+      display: block;
+      margin: 0;
+      padding: 11px 14px; // 22.5px line + 22px padding clears 44px
+    }
+
+    .page-link--current { box-shadow: none; font-weight: 600; }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Footer
+// ---------------------------------------------------------------------------
+
+.site-footer {
+  border-top: 1px solid $rule-color;
+  padding: $spacing-unit * 0.8 0;
+  margin-top: $spacing-unit * 2;
+}
+
+.site-footer__line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px $spacing-unit * 0.6;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  font-size: 14px;
+  color: $grey-color;
+}
+
+.site-footer__links a {
+  margin-left: $spacing-unit * 0.5;
+
+  &:first-child { margin-left: 0; }
+}
+
+// ---------------------------------------------------------------------------
+// Code
+// ---------------------------------------------------------------------------
+
+code, pre, kbd, samp { font-family: $mono-font; }
+
+code {
+  font-size: 0.875em;
+  border: none;
+  background-color: $surface-color;
+  border-radius: 4px;
+  padding: 1px 5px;
+  // Identifiers like ANONYMIZED_TELEMETRY=False are single unbreakable tokens
+  // wider than a phone. Without this they push the whole page sideways.
+  overflow-wrap: anywhere;
+}
+
+pre {
+  background-color: $surface-color;
+  border: 1px solid $rule-color;
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: 14.5px;
+  line-height: 1.6;
+
+  // Block code scrolls instead of wrapping, so alignment survives.
+  > code {
+    background-color: transparent;
+    padding: 0;
+    font-size: inherit;
+    overflow-wrap: normal;
+  }
+}
+
+.highlight { background: transparent; }
+
+// ---------------------------------------------------------------------------
+// Tables. Numbers line up; the frame stays light.
+// ---------------------------------------------------------------------------
+
+table {
+  font-size: 15px;
+  border: none;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+
+  th, td {
+    border: none;
+    border-bottom: 1px solid $rule-color;
+    padding: 9px 14px 9px 0;
+  }
+
+  th {
+    background-color: transparent;
+    border-bottom: 1px solid $grey-color-dark;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  tr:nth-child(even) { background-color: transparent; }
+  tbody tr:last-child td { border-bottom: none; }
+}
+
+// ---------------------------------------------------------------------------
+// Wide content. Prose stays at a readable measure while tables and diagrams
+// use the room they need.
+// ---------------------------------------------------------------------------
+
+// Mermaid draws its own subgraph outline, so a container border double-frames it.
+.post-content > pre.mermaid {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin: $spacing-unit * 0.9 0;
+  text-align: center;
+  overflow-x: auto;
+}
+
+@media screen and (min-width: 940px) {
+  .post-content > table,
+  .post-content > pre.mermaid {
+    width: calc(100% + 150px);
+    max-width: none;
+    margin-left: -75px;
+  }
+}
+
+@include media-query($on-palm) {
+  .post-content > table { display: block; overflow-x: auto; }
+
+  .post-content > h1:first-child { font-size: 31px; }
+  h1 { font-size: 28px; }
+  h2 { font-size: 22px; }
+  h3 { font-size: 19px; }
+}
+
+// ---------------------------------------------------------------------------
+// Lists and rules
+// ---------------------------------------------------------------------------
+
+.post-content {
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  li > ul, li > ol { margin-top: 4px; }
+
+  blockquote {
+    border-left: 3px solid $rule-color;
+    color: $grey-color-dark;
+    font-style: normal;
+    letter-spacing: normal;
+    padding-left: $spacing-unit * 0.55;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid $rule-color;
+    margin: $spacing-unit * 1.5 0;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Focus ring. minima leaves this to the browser default, which disappears
+// against the warm background.
+// ---------------------------------------------------------------------------
+
+a:focus-visible,
+label:focus-visible,
+summary:focus-visible {
+  outline: 2px solid $brand-color;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
