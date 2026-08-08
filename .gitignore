@@ -25,3 +25,4 @@ htmlcov/
 .env
 .bear-rag/
 backlog/
+.gstack/
