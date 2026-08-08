@@ -20,28 +20,16 @@ Use ChromaDB's built-in `DefaultEmbeddingFunction` which runs all-MiniLM-L6-v2 v
 
 **Privacy audit results (Phase 4):** ChromaDB includes opt-out telemetry (`ANONYMIZED_TELEMETRY` env var). We disable it at import time in `config.py:os.environ.setdefault`. ONNX Runtime makes no network calls during inference. On the indexing/embedding/search path the only network call is the one-time ~90MB model download on first use, fetched from ChromaDB's S3 bucket (`chroma-onnx-models.s3.amazonaws.com`).
 
-**Enforcement:** `tests/test_privacy.py` pre-warms the model cache, blocks outbound network
-sockets with `pytest-socket`, and exercises `NoteStore` construction, `upsert_chunks`,
-`query`, and `sync`. A negative control confirms the socket block is installed. The eval
-judge is excluded because its explicit purpose is to call Anthropic as development tooling.
+**Enforcement:** `tests/test_privacy.py` pre-warms the model cache, blocks outbound network sockets with `pytest-socket`, and exercises `NoteStore` construction, `upsert_chunks`, `query`, and `sync`. A negative control confirms the socket block is installed. The eval judge is excluded because its explicit purpose is to call Anthropic as development tooling.
 
-**Scope of the guarantee.** The installed package has no cloud SDK. `index`, `sync`,
-`search`, and `status` do not initiate network requests after the model download. The MCP
-server does return retrieved chunks to the connected agent, which may use a remote service.
-The development-only eval judge calls Anthropic when explicitly enabled. The claim covers
-local embedding and retrieval; it does not claim that every consumer of retrieved text is
-offline.
+**Scope of the guarantee.** The installed package has no cloud SDK. `index`, `sync`, `search`, and `status` do not initiate network requests after the model download. The MCP server does return retrieved chunks to the connected agent, which may use a remote service. The development-only eval judge calls Anthropic when explicitly enabled. The claim covers
+local embedding and retrieval; it does not claim that every consumer of retrieved text is offline.
 
-**History:** an earlier `bear-rag ask` command called Anthropic from the installed
-application. It was removed in 2026-07 after MCP made that answer path redundant. See
-[ADR-0004](0004-mcp-as-primary-interface.md).
+**History:** an earlier `bear-rag ask` command called Anthropic from the installed application. It was removed in 2026-07 after MCP made that answer path redundant. See [ADR-0004](0004-mcp-as-primary-interface.md).
 
 The embedding model (all-MiniLM-L6-v2) is pinned via explicit `DefaultEmbeddingFunction()` in `store.py` to ensure reproducibility across ChromaDB versions. `NoteStore` exposes an optional `embedding_function` injection point so alternate local models can be benchmarked, but the production default is unchanged.
 
-**Model comparison (Phase 5).** [ADR-0008](0008-embedding-model-evaluation.md) ran BGE,
-GTE, Snowflake Arctic, and Nomic candidates through the eval harness. The 20-query sample did
-not establish a gain large enough to justify switching, and the directionally strongest
-candidate required roughly twelve times the disk space plus a full re-index.
+**Model comparison (Phase 5).** [ADR-0008](0008-embedding-model-evaluation.md) ran BGE, GTE, Snowflake Arctic, and Nomic candidates through the eval harness. The 20-query sample did not establish a gain large enough to justify switching, and the directionally strongest candidate required roughly twelve times the disk space plus a full re-index.
 
 ## Alternatives Considered
 
@@ -54,8 +42,7 @@ candidate required roughly twelve times the disk space plus a full re-index.
 ## Consequences
 
 ### Positive
-- No note content leaves the machine during indexing, embedding, sync, or search; the MCP
-  handoff is a separate, opt-in boundary
+- No note content leaves the machine during indexing, embedding, sync, or search; the MCP handoff is a separate, opt-in boundary
 - Zero per-query cost after the one-time model download
 - Works offline after first run
 - ChromaDB handles the ONNX Runtime lifecycle, so we don't manage model loading

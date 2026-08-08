@@ -4,8 +4,7 @@ title: bear-app-rag
 
 # bear-app-rag
 
-Local-first semantic search for [Bear](https://bear.app) notes. The installed package has
-two direct dependencies, uses local ONNX embeddings, and exposes retrieval through MCP.
+Local-first semantic search for [Bear](https://bear.app) notes. The installed package has two direct dependencies, uses local ONNX embeddings, and exposes retrieval through MCP.
 
 ## Documentation
 

@@ -4,9 +4,7 @@ title: Architecture Decision Records
 
 # Architecture Decision Records
 
-These records preserve the context, alternatives, and consequences behind the project's
-main technical choices. Later amendments stay with the original decision when that history
-helps explain the current code.
+These records preserve the context, alternatives, and consequences behind the project's main technical choices. Later amendments stay with the original decision when that history helps explain the current code.
 
 | ADR | Decision | Phase |
 |-----|----------|-------|

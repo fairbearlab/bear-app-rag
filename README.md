@@ -1,26 +1,18 @@
 # bear-app-rag
 
-Local-first semantic search for [Bear](https://bear.app) notes. It reads Bear's
-SQLite database without modifying it, builds a local ONNX vector index, and exposes
-retrieval through MCP.
+Local-first semantic search for [Bear](https://bear.app) notes. It reads Bear's SQLite database without modifying it, builds a local ONNX vector index, and let’s agents retrieve through MCP.
 
-Two production dependencies. No orchestration framework. A committed eval shows where
-semantic search beats keyword matching and where it does not.
+Minimal by design. Two production dependencies. No orchestration framework. An eval shows where semantic search beats keyword matching and where it does not.
 
 ## Why this exists
 
-I keep enough material in Bear that remembering the idea is easier than remembering the
-words I used. Bear has no public API, and keyword search cannot connect a query such as
-"software releases without downtime" with a note about blue-green deployments unless the
-wording happens to overlap.
+I keep enough material in Bear that remembering the idea is easier than remembering the words I used. Bear has no public API, and keyword search cannot connect a query such as "software releases without downtime" with a note about blue-green deployments unless the wording happens to overlap.
 
-Sending an entire vault to a model is not a retrieval strategy. This project reads the
-local database, splits notes along their Markdown structure, embeds the chunks on-device,
-and returns only the relevant excerpts.
+Sending an entire vault to a model is not a retrieval strategy. This project reads the local database, splits notes along their Markdown structure, embeds the chunks on-device, and returns only the relevant excerpts.
 
-On the committed synthetic eval, semantic retrieval improves paraphrase recall from 0.60
-to 1.00. The control group ties at 1.00, and the multi-concept group is a useful reminder
-that vector search does not win every ranking contest.
+On the committed synthetic eval, semantic retrieval improves paraphrase recall from 0.60 to 1.00. The control group ties at 1.00, and the multi-concept group is a useful reminder that vector search does not win every ranking contest.
+
+Honestly this served as a learning project for me and Shiny Frog has since released a first-party MCP that will likely serve you better long-term.
 
 ## Quickstart
 
@@ -31,13 +23,11 @@ pip install git+https://github.com/fairbearlab/bear-app-rag.git
 bear-rag index
 ```
 
-The first index downloads the roughly 90 MB embedding model. Later indexing and search
-can run offline.
+The first index downloads the roughly 90 MB embedding model. Later indexing and search can run offline.
 
 ### MCP server
 
-The MCP server is the main interface. It lets a connected agent search, browse, read, and
-sync notes during a conversation. For a source checkout, add this to `.mcp.json`:
+The MCP server is the main interface. It lets a connected agent search, browse, read, and sync notes during a conversation. For a source checkout, add this to `.mcp.json`:
 
 ```json
 {
@@ -50,8 +40,7 @@ sync notes during a conversation. For a source checkout, add this to `.mcp.json`
 }
 ```
 
-This configuration is tested with Claude Code. Other MCP hosts can use the same stdio
-command, but their configuration shape may differ.
+This configuration is tested with Claude Code. Other MCP hosts can use the same stdio command, but their configuration shape may differ.
 
 ### Auto-sync with cron
 
@@ -73,25 +62,17 @@ flowchart LR
     MCP -. "returns selected note content" .-> Agent["Connected agent<br/>(opt-in trust boundary)"]
 ```
 
-The installed package has no cloud SDK. Indexing, sync, and search do not initiate network
-requests after the one-time model download. ChromaDB telemetry is disabled through both
-its runtime settings and an import-time environment default.
+The installed package has no cloud SDK. Indexing, sync, and search do not initiate network requests after the one-time model download. ChromaDB telemetry is disabled through both its runtime settings and an import-time environment default.
 
-That boundary ends where the MCP handoff begins: a connected agent receives retrieved note
-content and may use its own network services. The optional development-only LLM judge also
-calls Anthropic when explicitly enabled. Those are opt-in boundaries, not properties of the
-indexing path. [ADR-0002](docs/decisions/0002-local-onnx-embeddings.md) records the full scope.
+That boundary ends where the MCP handoff begins: an agent receives your note content and may use its own network services. The optional development-only LLM judge also calls Anthropic when explicitly enabled. Those are opt-in boundaries, not properties of the indexing path. [ADR-0002](docs/decisions/0002-local-onnx-embeddings.md) records the full scope.
 
 [Read the architecture tour.](docs/ARCHITECTURE.md)
 
 ## Benchmark results
 
-The committed eval compares local semantic retrieval with a SQLite `LIKE` baseline on 25
-synthetic notes and 23 queries. Twenty queries cover exact match, synonym, paraphrase, and
-multi-concept retrieval. Three more exercise tag-filter correctness end to end.
+The committed eval compares local semantic retrieval with a SQLite `LIKE` baseline on 25 synthetic notes and 23 queries. Twenty queries cover exact match, synonym, paraphrase, and multi-concept retrieval. Three more exercise tag-filter correctness end to end.
 
-Results come from `tests/eval/results.json`. All three reported metrics are deterministic
-and higher is better:
+Results come from `tests/eval/results.json`. All three reported metrics are deterministic and higher is better:
 
 - **Recall@5:** fraction of expected notes present in the top five results.
 - **MRR:** reciprocal rank of the first expected result.
@@ -115,10 +96,7 @@ and higher is better:
 | `tag_no_match` | 1 | 1.00 | 1.00 | 1.00 | 1.00 |
 | `tag_single` | 1 | 0.33 | 0.33 | 1.00 | 1.00 |
 
-The core result is specific: semantic retrieval is much better when the query paraphrases
-the note, and no better when the exact words are already present. On multi-concept queries,
-semantic retrieval finds more expected notes but ranks its first relevant result slightly
-lower. That is a tradeoff worth reporting, not rounding away.
+The core result: semantic retrieval is much better when the query paraphrases the note, but no better when the exact words are already present. On multi-concept queries, semantic retrieval finds more expected notes but ranks its first relevant result slightly lower. That is a tradeoff worth reporting, not rounding away.
 
 ### Side-by-side examples
 
@@ -126,18 +104,15 @@ lower. That is a tradeoff worth reporting, not rounding away.
 
 - **Semantic returns:** Recipe Ingredient Tracker, The Design of Everyday Things, Road Trip Planning
 - **Keyword returns:** Atomic Habits, Code Review Checklist, Budget Backpacking
-- The relevant note discusses affordances and signifiers. Keyword search cannot recover a
-  concept whose query vocabulary never appears in the note.
+- The relevant note discusses affordances and signifiers. Keyword search cannot recover a concept whose query vocabulary never appears in the note.
 
 **Query:** "How should I write software interfaces that other developers will enjoy using?"
 
 - **Semantic returns:** The Pragmatic Programmer, Deploying Python Apps, API Design Best Practices
 - **Keyword returns:** The Design of Everyday Things, Atomic Habits, Thai Green Curry
-- Semantic search places the API design note in the results; keyword search finds unrelated
-  uses of "design" and "interfaces."
+- Semantic search places the API design note in the results; keyword search finds unrelated uses of "design" and "interfaces."
 
-[View the benchmark visualization](docs/benchmarks/) or read the
-[evaluation methodology](docs/EVALUATION.md).
+[View the benchmark visualization](docs/benchmarks/) or read the [evaluation methodology](docs/EVALUATION.md).
 
 ## Design decisions
 

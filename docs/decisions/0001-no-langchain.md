@@ -10,8 +10,7 @@ Context: Phase 1 (initial design)
 
 ## Context
 
-LangChain is a common starting point for projects involving embeddings, vector stores, and
-LLM orchestration. This project still needs to justify owning those connections directly.
+LangChain is a common starting point for projects involving embeddings, vector stores, and LLM orchestration. This project still needs to justify owning those connections directly.
 
 We evaluated LangChain for the Bear notes pipeline and found a mismatch between what we need and what it provides.
 
@@ -19,15 +18,11 @@ We evaluated LangChain for the Bear notes pipeline and found a mismatch between 
 
 Build the RAG pipeline with direct library calls (chromadb, mcp) instead of LangChain or any orchestration framework.
 
-The core pipeline has four operations: read SQLite, chunk text, embed vectors, and query
-them. Two direct libraries cover the non-standard-library work.
+The core pipeline has four operations: read SQLite, chunk text, embed vectors, and query them. Two direct libraries cover the non-standard-library work.
 
 ## Alternatives Considered
 
-**LangChain:** Provides document loaders, splitters, vector-store wrappers, and chain
-abstractions. Those are useful in a larger or more variable pipeline. Here they would add a
-transitive dependency tree and a wrapper compatibility boundary around ChromaDB without
-removing much application code.
+**LangChain:** Provides document loaders, splitters, vector-store wrappers, and chain abstractions. Those are useful in a larger or more variable pipeline. Here they would add a transitive dependency tree and a wrapper compatibility boundary around ChromaDB without removing much application code.
 
 **LlamaIndex:** Similar scope to LangChain with a data-focused orientation. Same dependency and abstraction concerns.
 
@@ -39,7 +34,7 @@ removing much application code.
 - 2 direct dependencies total (chromadb, mcp) — even fewer than the pipeline originally shipped with, after `ask` was removed and `anthropic`/`python-dotenv` dropped from production (ADR-0004)
 - Failures can be traced through application code and the two underlying libraries
 - No version coupling between the framework and its underlying libraries
-- The small dependency surface makes package behavior easier to inspect
+- The small dependency surface makes the package behavior easier to inspect
 
 ### Negative
 - No pre-built Bear loader; this repository owns `bear_reader.py`

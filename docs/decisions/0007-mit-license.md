@@ -18,11 +18,9 @@ Use the MIT license. It permits reuse with a short, familiar attribution require
 
 ## Alternatives Considered
 
-**Apache 2.0:** Includes an explicit patent grant and additional terms. Those protections are
-useful in some projects, but the shorter MIT terms fit this small developer tool.
+**Apache 2.0:** Includes an explicit patent grant and additional terms. Those protections are useful in some projects, but the shorter MIT terms fit this small developer tool.
 
-**GPL/AGPL:** Copyleft keeps derivative work open. That is a valid goal, but it would impose
-conditions on integrations that this project does not need.
+**GPL/AGPL:** Copyleft keeps derivative work open. That is a valid goal, but it would impose conditions on integrations that this project does not need.
 
 **No license (public domain / Unlicense):** Some jurisdictions don't recognize public domain dedications. MIT is universally understood by corporate legal teams.
 
