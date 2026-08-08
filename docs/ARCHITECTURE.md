@@ -2,121 +2,157 @@
 title: Architecture
 ---
 
-# Architecture: How bear-app-rag Works
+# Architecture
 
-## The Pipeline (30-second version)
+## Pipeline
 
-```text
-Bear SQLite DB ──→ BearReader ──→ Chunker ──→ NoteStore (ChromaDB) ──→ MCP Server / CLI
-   (read-only)     (Core Data      (markdown-     (ONNX embeddings,      (search, read,
-                    timestamps)      aware split)   local vector store)    list, sync)
+```mermaid
+flowchart LR
+    subgraph local["On-device"]
+        DB[("Bear SQLite DB<br/>(read-only)")] --> BR["BearReader<br/>bear_reader.py"]
+        BR --> CH["Chunker<br/>chunker.py"]
+        CH --> NS["NoteStore<br/>ChromaDB + local ONNX embeddings"]
+        NS --> MCP["MCP server<br/>6 tools"]
+        NS --> CLI["CLI<br/>index / sync / status / demo"]
+    end
+    MCP -. "returns selected note content" .-> Agent["Connected agent<br/>(opt-in trust boundary)"]
 ```
 
-Two direct production dependencies: `chromadb`, `mcp`. Everything else is standard library. (`anthropic` is a dev-only extra used solely by the eval LLM judge — see below.)
+The installed package has two production dependencies: `chromadb` and `mcp`. `anthropic` belongs to the development extra and is used only by the optional eval judge.
 
-## Reading Bear's Database
+## Reading Bear
 
-Bear stores notes in a Core Data SQLite database at `~/Library/Group Containers/9K33E3U3T4.net.shinyfrog.bear/Application Data/database.sqlite`. There is no Bear API. The database is the only interface.
+Bear stores notes in a Core Data SQLite database at:
 
-`bear_reader.py:BearReader` opens the database in read-only mode (`?mode=ro` in the SQLite URI) so we never risk corrupting Bear's data. The class exposes methods for reading notes, listing tags, and querying by modification time.
+```text
+~/Library/Group Containers/9K33E3U3T4.net.shinyfrog.bear/Application Data/database.sqlite
+```
 
-**The 2001 epoch.** Core Data stores timestamps as seconds since 2001-01-01 UTC, not the Unix epoch (1970-01-01). This is an Apple-ism that nobody documents. `bear_reader.py:_core_data_to_datetime` handles the conversion. Every other part of the pipeline works in UTC datetimes.
+`BearReader` opens that file through a SQLite URI with `mode=ro`. The application never writes to Bear's database.
 
-**Tag fetching.** Bear stores tags in a separate join table (`Z_5TAGS`). `bear_reader.py:BearReader._fetch_tags_batch` batches tag lookups to avoid N+1 queries, chunking into groups of 900 to stay under SQLite's host-parameter limit.
+Core Data timestamps count seconds from 2001-01-01 UTC rather than the Unix epoch. `_core_data_to_datetime` and `_datetime_to_core_data` isolate that conversion so the rest of the package works with timezone-aware UTC datetimes.
 
-See [ADR-0005](decisions/0005-incremental-sync-via-timestamps.md) for why we chose timestamp-based change detection.
+Tags live in `ZSFNOTETAG` behind the `Z_5TAGS` join table. Batch tag reads use groups of 900 primary keys to stay below SQLite's common 999-variable limit. The reader also exposes two narrower views needed by sync and search:
 
-## Chunking: Where Most RAG Pipelines Get It Wrong
+- `read_active_pks()` returns every non-trashed, non-archived note currently in Bear.
+- `note_pks_for_tags()` returns the uncapped active-note set matching any supplied tag.
 
-Naive text splitting (every N characters) breaks mid-sentence, mid-paragraph, mid-thought. The embedding for a chunk that starts with "...and the third reason is" has no idea what the first two reasons were.
+Browse and search exclude archived notes. `read_note_by_title()` is the deliberate exception: a direct title lookup can return an archived note and reports `is_archived` so the caller can treat it accordingly.
 
-`chunker.py:chunk_note` splits on ATX headings (`#`, `##`, etc.) while respecting fenced code blocks. The heading hierarchy defines the document's semantic structure. When someone writes `## Ingredients` followed by `## Instructions`, those are distinct topics and should be separate chunks.
+## Chunking
 
-**The merge-up strategy.** Sections shorter than 30 words (the `MIN_CHUNK_WORDS` constant) get merged into the previous chunk. This prevents degenerate one-line headings like `## Notes` from becoming their own semantically empty chunk.
+`chunk_note()` splits Bear's Markdown on ATX headings while ignoring heading-like text inside fenced code blocks. The author-provided hierarchy is the first boundary; fixed-size splitting is only a fallback for an oversized section.
 
-**Overlap.** When a section exceeds 300 words and must be split, the last 40 words of each sub-chunk overlap with the next. This preserves continuity across hard splits.
+Three settings control the result:
 
-**Heading path metadata.** Each chunk carries a `heading_path` field (e.g., `"# Main Title > ## Sub-section"`). The MCP server surfaces this to AI agents, so they know where in the document structure a retrieved chunk came from.
+- `MAX_CHUNK_WORDS = 300`: split sections that exceed the target.
+- `MIN_CHUNK_WORDS = 30`: merge small fragments into an adjacent section.
+- `OVERLAP_WORDS = 40`: repeat context across splits of an oversized section.
 
-See [ADR-0003](decisions/0003-chunk-sizing-strategy.md) for the sizing rationale.
+Each chunk stores its note primary key, title, tags, index, modification time, source, and heading path. A path such as `# Recipe > ## Ingredients` gives the caller useful context without retrieving the whole note.
 
-## Embeddings: Local-First, No Cloud Required
+[ADR-0003](decisions/0003-chunk-sizing-strategy.md) records the tradeoffs behind these values.
 
-`store.py:NoteStore` wraps ChromaDB with an explicitly pinned `DefaultEmbeddingFunction` (all-MiniLM-L6-v2 via ONNX Runtime). Every embedding is computed on-device. Indexing, embedding, and search never call a cloud service or a hosted vector DB.
+## Embeddings and storage
 
-The model produces 384-dimensional vectors. It's smaller than cloud alternatives (OpenAI's text-embedding-3-small produces 1536 dimensions), but at personal-note scale the quality difference doesn't matter, and the privacy guarantee does.
+`NoteStore` wraps ChromaDB's `PersistentClient` and explicitly constructs `DefaultEmbeddingFunction()`, which uses all-MiniLM-L6-v2 through ONNX Runtime. The model produces 384-dimensional vectors and is downloaded once on first use.
 
-ChromaDB's telemetry is disabled at import time via `config.py:os.environ.setdefault('ANONYMIZED_TELEMETRY', 'False')`. ONNX Runtime makes no network calls during inference. On the indexing/embedding/search path the only network call is the one-time ~90MB model download on first use.
+The collection lives at `~/.bear-rag/chroma/` by default. `NoteStore` provides a small surface:
 
-The installed package has zero cloud dependency, and this guarantee covers the whole shipped CLI: `index`, `sync`, and `status` never egress. There is one documented, opt-in boundary at runtime: the MCP server returns retrieved chunks to the connected agent, which then generates the answer — a deliberate trust boundary, not a gap in this codebase. Separately, dev-only tooling (the eval LLM judge in `tests/eval/eval_harness.py`) calls the Anthropic API to score retrieval quality; it ships behind the `dev` extra and never runs as part of the installed package.
+- write chunks in batches of 100;
+- delete every chunk for a note;
+- reset the collection for a full index;
+- run vector queries with an optional native ChromaDB metadata filter;
+- report indexed note primary keys and collection statistics.
 
-See [ADR-0002](decisions/0002-local-onnx-embeddings.md) for the full privacy audit.
+Tag logic does not live in the store. The MCP layer resolves tags to note primary keys and passes `{"note_pk": {"$in": [...]}}` to ChromaDB. Keeping the store reader-free avoids a second query engine and makes the boundary testable.
 
-## Storage: ChromaDB Without the Framework
+`get_stats()` computes its distinct note count from stored metadata. That is an O(all chunks) scan and is acceptable for the low-frequency status command. If status becomes a hot path, the count needs a different storage strategy rather than a nicer comment.
 
-`store.py:NoteStore` is a thin wrapper around ChromaDB's `PersistentClient`. It handles:
+## Network boundary
 
-- **Batched upserts** (`upsert_chunks`): chunks are written in groups of 100 to avoid memory spikes on large vaults.
-- **$contains post-filtering** (`_extract_contains_filters`): ChromaDB's `$contains` operator doesn't work on metadata string fields. We extract these conditions and apply them in Python after the vector search. This lets the MCP server filter by tag substring (e.g., "find notes tagged with recipes").
-- **Mixed $or handling**: When a `$or` clause mixes `$contains` and non-`$contains` conditions, we can't split without changing OR-to-AND semantics. The entire group gets evaluated in post-filtering.
+Indexing, embedding, sync, and search do not initiate network requests after the embedding model has been downloaded. ChromaDB telemetry is disabled in two places:
 
-The collection is persisted to `~/.bear-rag/chroma/` by default. A full re-index takes ~30s for 500 notes.
+1. `config.py` sets `ANONYMIZED_TELEMETRY=False` before ChromaDB is imported.
+2. `NoteStore` passes `Settings(anonymized_telemetry=False)` to `PersistentClient`.
 
-See [ADR-0001](decisions/0001-no-langchain.md) for why we use ChromaDB directly.
+`tests/test_privacy.py` pre-warms the model cache, blocks outbound sockets, and exercises store construction, upsert, query, and sync. A negative control confirms the socket block is active.
 
-## The MCP Server: AI Agents as Primary Users
+The MCP server is an explicit trust boundary. It runs over local stdio, but it returns note content to the connected process; that process may send the content elsewhere. The optional eval judge is another explicit boundary and calls Anthropic only when `EVAL_LLM_JUDGE=1` is set. [ADR-0002](decisions/0002-local-onnx-embeddings.md) defines the claim in durable form.
 
-`mcp_server.py` exposes 6 tools via the Model Context Protocol:
+## MCP server
+
+The stdio server exposes six tools:
 
 | Tool | Purpose |
 |------|---------|
-| `search_notes` | Semantic search across all indexed notes |
-| `read_note` | Read a specific note by title |
-| `list_notes` | Browse notes with tag/date/title filters |
-| `list_tags` | Show all tags with note counts |
-| `sync_notes` | Trigger incremental sync from Bear |
-| `status` | Show index stats and last sync time |
+| `search_notes` | Return semantically ranked chunks, optionally restricted by tags |
+| `read_note` | Read a full note by case-insensitive title |
+| `list_notes` | Browse active notes by tag, date, title, and limit |
+| `list_tags` | Count tags across active notes |
+| `sync_notes` | Update the index from Bear |
+| `status` | Report note count, chunk count, and last sync time |
 
-The server runs over stdio (no network transport). Tool descriptions are written as UX copy for AI agents: they explain what the tool does, when to use it, and what the return format looks like.
+All tool functions use the same error boundary. Expected input and missing-database errors return stable messages; raw paths and unexpected exception text remain in server logs.
 
-See [ADR-0004](decisions/0004-mcp-as-primary-interface.md) for the MCP-first design rationale.
+### Tag-filter snapshot semantics
 
-## Sync: Incremental by Design
+`search_notes(query, tags=[...])` resolves tag membership from live Bear SQL and retrieves chunk content from the indexed snapshot. A tag edit can therefore change which notes match before the returned chunk metadata reflects the edit. The next sync closes the gap.
 
-`sync.py:sync` only re-indexes notes that changed since the last run:
+If no note matches the requested tags, the tool returns `[]` before calling ChromaDB. An empty `$in` list is not passed through because ChromaDB can treat it as no filter and return unrestricted results.
 
-1. Read the last-sync timestamp from `~/.bear-rag/last_sync.json`
-2. Query Bear for notes with `ZMODIFICATIONDATE > last_timestamp`
-3. For each changed note: delete old chunks, chunk the new text, upsert
-4. Query Bear for trashed note PKs, delete their chunks
-5. Write the new timestamp
+[ADR-0004](decisions/0004-mcp-as-primary-interface.md) explains why MCP owns this boundary.
 
-`sync.py:full_index` wipes the collection and re-syncs everything. Used for first-time setup and when the index schema version changes (tracked via `INDEX_VERSION` in config).
+## Sync
 
-The `--dry-run` flag previews changes without modifying the store. The `--quiet` flag suppresses output when there's nothing to report, making it cron-friendly.
+Incremental sync combines timestamp-based updates with set reconciliation:
 
-See [ADR-0005](decisions/0005-incremental-sync-via-timestamps.md) for the timestamp design.
+1. Read the last Core Data timestamp from `~/.bear-rag/last_sync.json`.
+2. Read non-trashed notes modified after that timestamp, including archived notes so the cursor can advance past an archive-only edit.
+3. Re-chunk and upsert modified notes that are still active.
+4. Compare indexed primary keys with `read_active_pks()` and delete anything stale. This catches archived, trashed, and deleted notes without assuming those actions update `ZMODIFICATIONDATE`.
+5. Advance the cursor to the latest modified row and persist the index schema version.
 
-## The Eval Framework: Proving It Works
+Running sync twice without a Bear change reports zero updates and zero deletions. A schema version mismatch triggers a full index. `--dry-run` computes the same counts without writing the collection or state file, and `--quiet` suppresses the no-change message for cron.
 
-`tests/eval/eval_harness.py` implements a dual-retriever benchmark comparing semantic search (ChromaDB) against keyword search (SQLite LIKE) on a 25-note synthetic corpus.
+[ADR-0005](decisions/0005-incremental-sync-via-timestamps.md) records the original timestamp decision and its reconciliation amendment.
 
-The eval doesn't use RAGAS, DeepEval, or any eval framework. It's pytest, JSON fixtures, and arithmetic. The metrics (recall@K, MRR, keyword groundedness) are hand-rolled with parametrized unit tests.
+## Evaluation
 
-Results: semantic search beats keyword matching by +40% recall on paraphrase queries and +13% on synonym queries. On exact-match queries (the control group), both methods tie at 1.00.
+The eval harness compares semantic retrieval with an in-memory SQLite `LIKE` baseline on 25 synthetic notes. The current corpus has 23 queries: 20 retrieval-quality cases and three tag-filter correctness cases. Recall@5, MRR, and keyword groundedness are deterministic; the LLM judge is optional.
 
-See [ADR-0006](decisions/0006-hand-rolled-eval-framework.md) for the eval design, and [EVALUATION.md](EVALUATION.md) for methodology details.
+The committed result shows the intended boundary clearly: semantic retrieval improves paraphrase and synonym queries, ties exact-match recall, and does not beat the keyword baseline on every ranking metric.
 
-## Module Summary
+See [EVALUATION.md](EVALUATION.md) for the method and [ADR-0006](decisions/0006-hand-rolled-eval-framework.md) for the decision to keep the harness small.
 
-| Module | Lines | Purpose |
-|--------|-------|---------|
-| `bear_reader.py` | ~210 | Read notes and tags from Bear's SQLite database |
-| `chunker.py` | ~150 | Markdown-aware splitting with heading hierarchy |
-| `store.py` | ~210 | ChromaDB wrapper with $contains post-filtering |
-| `sync.py` | ~150 | Incremental sync with Core Data timestamps |
-| `mcp_server.py` | ~100 | MCP server with 6 tools for AI agents |
-| `generator.py` | ~50 | Prompt construction and Claude API calls |
-| `cli.py` | ~140 | argparse entry point with subcommands |
-| `config.py` | ~30 | All constants and configuration |
-| `models.py` | ~40 | Data classes (BearNote, Chunk, ChunkMetadata, SyncResult) |
+## Module summary
+
+| Module | Responsibility |
+|--------|----------------|
+| `bear_reader.py` | Bear schema access, active-note views, and tag resolution |
+| `chunker.py` | Markdown parsing, splitting, overlap, and chunk metadata |
+| `store.py` | ChromaDB lifecycle, vector queries, and index statistics |
+| `sync.py` | Incremental updates, stale-note reconciliation, and full rebuilds |
+| `mcp_server.py` | MCP tools, tag-aware search, and client-safe errors |
+| `cli.py` | Administrative commands and demo dispatch |
+| `status.py` | Shared status assembly for CLI and MCP |
+| `demo.py` | Self-contained retrieval demonstration |
+| `config.py` | Paths, telemetry defaults, model name, and chunk settings |
+| `models.py` | Note, chunk, metadata, and sync result types |
+
+<script type="module">
+  // GitHub renders ```mermaid fences natively; Jekyll does not. Kramdown emits them
+  // as .language-mermaid code blocks, so unwrap those and hand them to Mermaid.
+  const blocks = document.querySelectorAll(".language-mermaid");
+  if (blocks.length) {
+    const mermaid = (await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs")).default;
+    blocks.forEach((block) => {
+      const pre = document.createElement("pre");
+      pre.className = "mermaid";
+      pre.textContent = block.textContent;
+      block.replaceWith(pre);
+    });
+    mermaid.initialize({ startOnLoad: false });
+    await mermaid.run();
+  }
+</script>

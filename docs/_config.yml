@@ -1,4 +1,6 @@
 title: bear-app-rag
 description: Local-first semantic search for Bear notes
+url: https://fairbearlab.github.io
+baseurl: /bear-app-rag
 theme: minima
 markdown: kramdown

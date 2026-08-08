@@ -20,15 +20,16 @@ Use ChromaDB's built-in `DefaultEmbeddingFunction` which runs all-MiniLM-L6-v2 v
 
 **Privacy audit results (Phase 4):** ChromaDB includes opt-out telemetry (`ANONYMIZED_TELEMETRY` env var). We disable it at import time in `config.py:os.environ.setdefault`. ONNX Runtime makes no network calls during inference. On the indexing/embedding/search path the only network call is the one-time ~90MB model download on first use, fetched from ChromaDB's S3 bucket (`chroma-onnx-models.s3.amazonaws.com`).
 
-**Enforcement:** this guarantee is regression-tested, not just documented. `tests/test_privacy.py` pre-warms the model cache, blocks all outbound network sockets (via `pytest-socket`), and asserts that `NoteStore` construction, `upsert_chunks`, `query`, and `sync` all still succeed — with a negative-control test proving the socket block is actually installed. The eval LLM judge (`tests/eval/eval_harness.py`) is deliberately excluded, since it legitimately calls the Anthropic API as dev-only tooling; it never ships with the installed package (D1, ADR history below).
+**Enforcement:** `tests/test_privacy.py` pre-warms the model cache, blocks outbound network sockets with `pytest-socket`, and exercises `NoteStore` construction, `upsert_chunks`, `query`, and `sync`. A negative control confirms the socket block is installed. The eval judge is excluded because its explicit purpose is to call Anthropic as development tooling.
 
-**Scope of the guarantee.** The installed package has zero cloud dependency: `index`, `sync`, `search`, and `status` never egress. One path is opt-in at runtime and outside this codebase's control: the MCP server returns retrieved chunks to whatever agent is connected, which then generates the answer — a trust boundary the user opts into by wiring up the server, not a gap in the local-only claim. Separately, the eval LLM judge is a dev-only, opt-in caller of the Anthropic API used to score retrieval quality; it is never installed or run as part of the shipped package. The privacy claim is about embedding and retrieval, not about answer generation, which happens entirely outside this repo (the connected agent, or the dev-only eval judge).
+**Scope of the guarantee.** The installed package has no cloud SDK. `index`, `sync`, `search`, and `status` do not initiate network requests after the model download. The MCP server does return retrieved chunks to the connected agent, which may use a remote service. The development-only eval judge calls Anthropic when explicitly enabled. The claim covers
+local embedding and retrieval; it does not claim that every consumer of retrieved text is offline.
 
-**History:** an earlier `bear-rag ask` CLI command generated answers locally by calling the Anthropic API directly. It was removed (2026-07) as a redundant, worse re-implementation of what the MCP path already does — see [ADR-0004](0004-mcp-as-primary-interface.md) for why.
+**History:** an earlier `bear-rag ask` command called Anthropic from the installed application. It was removed in 2026-07 after MCP made that answer path redundant. See [ADR-0004](0004-mcp-as-primary-interface.md).
 
 The embedding model (all-MiniLM-L6-v2) is pinned via explicit `DefaultEmbeddingFunction()` in `store.py` to ensure reproducibility across ChromaDB versions. `NoteStore` exposes an optional `embedding_function` injection point so alternate local models can be benchmarked, but the production default is unchanged.
 
-**Model choice is now measured, not asserted (Phase 5).** [ADR-0008](0008-embedding-model-evaluation.md) ran the BGE, GTE, Snowflake Arctic, and Nomic families through the eval harness and concluded: keep all-MiniLM-L6-v2. No candidate's gains cleared statistical noise on the n=20 corpus, and the only model that led directionally (nomic-embed-text-v1.5) would have cost a 12× disk footprint and a full re-index. See ADR-0008 for the comparison table and the follow-ups that could change the call.
+**Model comparison (Phase 5).** [ADR-0008](0008-embedding-model-evaluation.md) ran BGE, GTE, Snowflake Arctic, and Nomic candidates through the eval harness. The 20-query sample did not establish a gain large enough to justify switching, and the directionally strongest candidate required roughly twelve times the disk space plus a full re-index.
 
 ## Alternatives Considered
 
@@ -41,7 +42,7 @@ The embedding model (all-MiniLM-L6-v2) is pinned via explicit `DefaultEmbeddingF
 ## Consequences
 
 ### Positive
-- No note content leaves the machine during indexing, embedding, sync, or search (the MCP server's hand-off to the connected agent is the one documented, opt-in exception)
+- No note content leaves the machine during indexing, embedding, sync, or search; the MCP handoff is a separate, opt-in boundary
 - Zero per-query cost after the one-time model download
 - Works offline after first run
 - ChromaDB handles the ONNX Runtime lifecycle, so we don't manage model loading

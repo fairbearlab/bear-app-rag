@@ -14,22 +14,22 @@ The project needs a license before publishing. Without one, the code is technica
 
 ## Decision
 
-MIT license. Maximum permissiveness for a developer tool.
+Use the MIT license. It permits reuse with a short, familiar attribution requirement.
 
 ## Alternatives Considered
 
-**Apache 2.0:** Includes a patent grant clause, which MIT lacks. Relevant for projects with novel algorithms or standards-track implementations. bear-app-rag doesn't contain patentable techniques, so the patent clause adds legal complexity without practical benefit.
+**Apache 2.0:** Includes an explicit patent grant and additional terms. Those protections are useful in some projects, but the shorter MIT terms fit this small developer tool.
 
-**GPL/AGPL:** Copyleft ensures derivative works stay open. But it discourages commercial adoption and makes integration with proprietary tools awkward. For a developer tool intended as portfolio signal, maximum adoption matters more than copyleft protection.
+**GPL/AGPL:** Copyleft keeps derivative work open. That is a valid goal, but it would impose conditions on integrations that this project does not need.
 
 **No license (public domain / Unlicense):** Some jurisdictions don't recognize public domain dedications. MIT is universally understood by corporate legal teams.
 
 ## Consequences
 
 ### Positive
-- Compatible with commercial use, no friction for adoption
+- Compatible with commercial and private use under familiar terms
 - Standard for developer tools and CLI utilities
-- One of the most recognized licenses, corporate legal teams approve it routinely
+- Common enough that users can understand the obligation quickly
 
 ### Negative
 - No patent protection (acceptable: no patentable techniques in this project)

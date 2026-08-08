@@ -10,7 +10,7 @@ Context: Phase 1 (initial design)
 
 ## Context
 
-Every "RAG from scratch" tutorial uses LangChain. It's the default choice for anything involving embeddings, vector stores, and LLM orchestration. Starting a RAG project without it requires justification.
+LangChain is a common starting point for projects involving embeddings, vector stores, and LLM orchestration. This project still needs to justify owning those connections directly.
 
 We evaluated LangChain for the Bear notes pipeline and found a mismatch between what we need and what it provides.
 
@@ -18,11 +18,11 @@ We evaluated LangChain for the Bear notes pipeline and found a mismatch between 
 
 Build the RAG pipeline with direct library calls (chromadb, mcp) instead of LangChain or any orchestration framework.
 
-The entire pipeline is four operations: read SQLite, chunk text, embed into vectors, query them. For a pipeline this small, that's two libraries, not a framework.
+The core pipeline has four operations: read SQLite, chunk text, embed vectors, and query them. Two direct libraries cover the non-standard-library work.
 
 ## Alternatives Considered
 
-**LangChain:** The obvious choice. Provides document loaders, text splitters, vector store wrappers, and chain abstractions. But it pulls in a large transitive dependency tree, wraps every library in an abstraction layer, and — for a pipeline this small — tends to turn debugging into a multi-layer stack-trace exercise where the underlying library just needed a different parameter. When ChromaDB ships a breaking change, you're waiting on LangChain to update their wrapper.
+**LangChain:** Provides document loaders, splitters, vector-store wrappers, and chain abstractions. Those are useful in a larger or more variable pipeline. Here they would add a transitive dependency tree and a wrapper compatibility boundary around ChromaDB without removing much application code.
 
 **LlamaIndex:** Similar scope to LangChain with a data-focused orientation. Same dependency and abstraction concerns.
 
@@ -32,13 +32,13 @@ The entire pipeline is four operations: read SQLite, chunk text, embed into vect
 
 ### Positive
 - 2 direct dependencies total (chromadb, mcp) — even fewer than the pipeline originally shipped with, after `ask` was removed and `anthropic`/`python-dotenv` dropped from production (ADR-0004)
-- Every line of the pipeline is debuggable without framework internals
+- Failures can be traced through application code and the two underlying libraries
 - No version coupling between the framework and its underlying libraries
-- The small dependency count keeps the whole pipeline auditable in an afternoon
+- The small dependency surface makes the package behavior easier to inspect
 
 ### Negative
-- No pre-built document loaders (we wrote `bear_reader.py`, ~80 lines)
-- No pre-built text splitters (we wrote `chunker.py`, ~150 lines)
+- No pre-built Bear loader; this repository owns `bear_reader.py`
+- No pre-built Markdown strategy; this repository owns `chunker.py`
 - If the pipeline grew to 10+ stages with complex routing, a framework would reduce boilerplate
 
 ### Neutral

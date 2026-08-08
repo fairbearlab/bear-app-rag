@@ -87,6 +87,8 @@ def generate() -> str:
     agg = data["aggregates"]
     overall = agg["overall"]
     by_type = agg["by_type"]
+    query_count = len(data["queries"])
+    type_count = len(by_type)
 
     # Chart 1: Recall@5 by query type
     types = sorted(by_type.keys())
@@ -155,14 +157,15 @@ layout: null
 <body>
 <h1>bear-app-rag Benchmark Results</h1>
 <p>
-  RAG vs keyword (SQLite LIKE) retrieval on a 25-note synthetic corpus
-  with 20 eval queries across four query types.
+  Semantic vs keyword (SQLite LIKE) retrieval on a 25-note synthetic corpus
+  with {query_count} eval queries across {type_count} query types.
 </p>
 
 <div class="summary">
-  <p><strong>Key finding:</strong> Semantic search beats keyword matching by
-  +40% recall on paraphrase queries and +13% on synonym queries.
-  On exact-match queries (control), both tie at 1.00.</p>
+  <p><strong>Key finding:</strong> Semantic search improves recall by
+  0.40 on paraphrase queries and 0.13 on synonym queries.
+  Exact-match recall ties at 1.00; the multi-concept group favors semantic
+  recall and keyword first-hit rank.</p>
 </div>
 
 <div class="chart">
