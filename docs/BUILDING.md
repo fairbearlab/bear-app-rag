@@ -1,5 +1,6 @@
 ---
 title: "Building a RAG Pipeline Without LangChain"
+nav_title: Building It
 ---
 
 # Building a RAG Pipeline Without LangChain

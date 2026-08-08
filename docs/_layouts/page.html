@@ -1,0 +1,14 @@
+---
+layout: default
+---
+{%- comment -%}
+  minima's page layout renders page.title as an <h1>, but every document here
+  already opens with its own '# Title' so it reads correctly on github.com too.
+  Rendering both gave every page two identical H1s. The front matter title is
+  still what feeds the nav, <title>, and SEO tags.
+{%- endcomment -%}
+<article class="post">
+  <div class="post-content">
+    {{ content }}
+  </div>
+</article>

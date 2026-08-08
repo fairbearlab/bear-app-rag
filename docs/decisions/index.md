@@ -1,5 +1,6 @@
 ---
 title: Architecture Decision Records
+nav_title: Decisions
 ---
 
 # Architecture Decision Records

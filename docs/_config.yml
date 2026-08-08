@@ -4,3 +4,28 @@ url: https://fairbearlab.github.io
 baseurl: /bear-app-rag
 theme: minima
 markdown: kramdown
+
+plugins:
+  - jekyll-seo-tag
+
+# Without this, GitHub Pages relies on jekyll-default-layout to assign layouts
+# implicitly, which local Jekyll does not do. Being explicit keeps the two builds
+# in agreement.
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: page
+
+# minima puts every titled page in the header nav by default, which turns eight
+# ADRs plus the guides into a five-row wall. Name the four that belong there.
+header_pages:
+  - ARCHITECTURE.md
+  - BUILDING.md
+  - EVALUATION.md
+  - decisions/index.md
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
