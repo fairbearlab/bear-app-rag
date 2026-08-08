@@ -116,10 +116,24 @@ a {
   padding: $spacing-unit * 0.55 0;
 }
 
+// minima aligns the title and nav by giving both the same tall line-height
+// ($base-line-height * $base-font-size * 2.25). That couples alignment to font
+// metrics, so any type change knocks the two apart. A flex row centres them on
+// their own heights instead. The mobile nav is position:absolute against
+// .site-header, so it stays out of this flow and is unaffected.
+.site-header > .wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-unit * 0.5;
+}
+
 .site-title {
+  float: none;
   font-family: $mono-font;
   font-size: 17px;
   font-weight: 500;
+  line-height: 1.4;
   letter-spacing: -0.01em;
   color: $text-color;
 
@@ -128,6 +142,7 @@ a {
 }
 
 .site-nav {
+  float: none;
   line-height: 1.5;
 
   .page-link {
