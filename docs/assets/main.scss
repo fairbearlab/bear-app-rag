@@ -247,7 +247,26 @@ pre {
   }
 }
 
-.highlight { background: transparent; }
+// minima paints fenced blocks #eef (pale blue) through
+// `.highlighter-rouge .highlight`, which outranks a bare `pre` rule, so the
+// blocks drifted away from the tan used by inline code. Normalise every
+// wrapper rouge can emit onto the one surface colour.
+.highlight,
+.highlighter-rouge .highlight,
+pre.highlight,
+div.highlight {
+  background-color: $surface-color;
+}
+
+// Rouge tints individual tokens for errors and diffs. Those defaults are cold
+// against a warm surface, and the error pink reads as a rendering fault.
+.highlight {
+  .err { color: #a61717; background-color: transparent; }
+  .gd  { color: #8a1f11; background-color: #f6e3e1; }
+  .gi  { color: #2c5f2d; background-color: #e4efe2; }
+  .gd .x { background-color: #f0cfcb; }
+  .gi .x { background-color: #cfe3cc; }
+}
 
 // ---------------------------------------------------------------------------
 // Tables. Numbers line up; the frame stays light.

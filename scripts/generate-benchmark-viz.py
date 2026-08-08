@@ -122,6 +122,9 @@ layout: null
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>bear-app-rag Benchmark Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&display=swap">
 <style>
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
   body {{
@@ -152,6 +155,17 @@ layout: null
   .summary p {{ margin-bottom: 0.5rem; }}
   a {{ color: #3b82f6; text-decoration: none; }}
   a:hover {{ text-decoration: underline; }}
+  code {{
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875em;
+    background: #f7f2ea;
+    border-radius: 4px;
+    padding: 1px 5px;
+    overflow-wrap: anywhere;
+  }}
+  @media (prefers-color-scheme: dark) {{
+    code {{ background: #1f2937; }}
+  }}
 </style>
 </head>
 <body>
