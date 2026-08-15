@@ -16,7 +16,7 @@ class _Section(NamedTuple):
     """Raw section produced by the primary heading split."""
 
     heading_line: str  # e.g. "## My Heading" or "" for pre-heading content
-    body: str          # text after the heading line
+    body: str  # text after the heading line
 
 
 def _split_on_headings(text: str) -> list[_Section]:
@@ -147,11 +147,11 @@ def _merge_up(chunks: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:
 
     # Forward pass: merge undersized first chunk into next
     while len(result) > 1 and _size(result[0]) < MIN_CHUNK_WORDS:
-        first_path, first_hl, first_body = result[0]
+        _first_path, first_hl, first_body = result[0]
         second_path, second_hl, second_body = result[1]
         # Combine: prepend first content into second's body
         new_text = _text(first_hl, first_body) + "\n\n" + _text(second_hl, second_body)
-        result = [(second_path, "", new_text)] + result[2:]
+        result = [(second_path, "", new_text), *result[2:]]
 
     # Backward pass: merge undersized non-first chunks into predecessor
     changed = True
@@ -163,7 +163,7 @@ def _merge_up(chunks: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:
             if i > 0 and _size(result[i]) < MIN_CHUNK_WORDS:
                 # Merge into predecessor
                 prev_path, prev_hl, prev_body = new_result[-1]
-                curr_path, curr_hl, curr_body = result[i]
+                _curr_path, curr_hl, curr_body = result[i]
                 merged_text = _text(prev_hl, prev_body) + "\n\n" + _text(curr_hl, curr_body)
                 new_result[-1] = (prev_path, "", merged_text)
                 changed = True
@@ -211,11 +211,7 @@ def chunk_note(note: BearNote) -> list[Chunk]:
             expanded.append((path, heading_line, body))
 
     # Filter out completely empty sections (no heading, no body)
-    expanded = [
-        (path, hl, body)
-        for path, hl, body in expanded
-        if (hl.strip() or body.strip())
-    ]
+    expanded = [(path, hl, body) for path, hl, body in expanded if (hl.strip() or body.strip())]
 
     # Merge-up undersized chunks
     merged = _merge_up(expanded)

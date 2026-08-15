@@ -14,7 +14,7 @@ import os
 import re
 import sqlite3
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bear_rag import config
@@ -25,7 +25,7 @@ from bear_rag.store import NoteStore
 
 _FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
-_CORE_DATA_EPOCH = datetime(2001, 1, 1, tzinfo=timezone.utc)
+_CORE_DATA_EPOCH = datetime(2001, 1, 1, tzinfo=UTC)
 
 
 def _datetime_to_core_data(dt: datetime) -> float:
@@ -85,7 +85,7 @@ def _build_bear_fixture_db(db_path: Path, raw_notes: list[dict]) -> None:
     tag_rows: list[tuple[int, str]] = []
     join_rows: list[tuple[int, int]] = []
     for n in raw_notes:
-        modified_at = datetime.fromisoformat(n["modified_at"]).replace(tzinfo=timezone.utc)
+        modified_at = datetime.fromisoformat(n["modified_at"]).replace(tzinfo=UTC)
         note_rows.append(
             (n["pk"], n["title"], n["text"], _datetime_to_core_data(modified_at), 0, 0)
         )
@@ -129,9 +129,7 @@ class EvalCorpus:
                 pk=n["pk"],
                 title=n["title"],
                 text=n["text"],
-                modified_at=datetime.fromisoformat(n["modified_at"]).replace(
-                    tzinfo=timezone.utc
-                ),
+                modified_at=datetime.fromisoformat(n["modified_at"]).replace(tzinfo=UTC),
                 tags=n.get("tags", []),
                 is_trashed=False,
                 is_archived=False,
@@ -144,9 +142,7 @@ class EvalCorpus:
 
         # Build in-memory SQLite for LIKE baseline
         self._db = sqlite3.connect(":memory:")
-        self._db.execute(
-            "CREATE TABLE notes (pk INTEGER PRIMARY KEY, title TEXT, text TEXT)"
-        )
+        self._db.execute("CREATE TABLE notes (pk INTEGER PRIMARY KEY, title TEXT, text TEXT)")
         self._db.executemany(
             "INSERT INTO notes (pk, title, text) VALUES (?, ?, ?)",
             [(n["pk"], n["title"], n["text"]) for n in raw_notes],
@@ -240,6 +236,7 @@ class EvalCorpus:
 
 def _tokenize_query(query: str) -> list[str]:
     """Split query into lowercase words, filtering short/stop words."""
+    # fmt: off
     stop_words = {
         "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
         "have", "has", "had", "do", "does", "did", "will", "would", "could",
@@ -254,6 +251,7 @@ def _tokenize_query(query: str) -> list[str]:
         "that", "these", "those", "am", "it", "its", "i", "me", "my", "we",
         "our", "you", "your", "he", "her", "him", "his", "she", "they", "them",
     }
+    # fmt: on
     words = re.findall(r"\w+", query.lower())
     return [w for w in words if len(w) > 1 and w not in stop_words]
 
@@ -314,7 +312,7 @@ def llm_judge_text(query: str, retrieved_text: str, answer_context: str) -> floa
     than masquerading the failure as a real 0.0 score.
     """
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        raise EnvironmentError("ANTHROPIC_API_KEY required for LLM judge")
+        raise OSError("ANTHROPIC_API_KEY required for LLM judge")
 
     try:
         import anthropic
@@ -346,27 +344,19 @@ def llm_judge_text(query: str, retrieved_text: str, answer_context: str) -> floa
     try:
         score_text = response.content[0].text.strip()
     except (IndexError, AttributeError, TypeError) as e:
-        raise LLMJudgeError(
-            f"LLM judge returned an unexpected response shape: {e}"
-        ) from e
+        raise LLMJudgeError(f"LLM judge returned an unexpected response shape: {e}") from e
     try:
         score = float(score_text)
     except ValueError as e:
-        raise LLMJudgeError(
-            f"LLM judge returned a non-numeric score: {score_text!r}"
-        ) from e
+        raise LLMJudgeError(f"LLM judge returned a non-numeric score: {score_text!r}") from e
     # float() accepts "nan"/"inf"; those would clamp to a fake 1.0 and quietly
     # defeat fail-closed, so reject any non-finite reply outright.
     if not math.isfinite(score):
-        raise LLMJudgeError(
-            f"LLM judge returned a non-finite score: {score_text!r}"
-        )
+        raise LLMJudgeError(f"LLM judge returned a non-finite score: {score_text!r}")
     return max(0.0, min(1.0, score))
 
 
-def llm_judge_groundedness(
-    query: str, chunks: list[Chunk], answer_context: str
-) -> float:
+def llm_judge_groundedness(query: str, chunks: list[Chunk], answer_context: str) -> float:
     """Convenience wrapper: judge a list of *chunks* by joining their text.
 
     ``run_eval`` scores the committed RAG/LIKE columns via ``llm_judge_text`` on
@@ -393,9 +383,7 @@ def text_fingerprint(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def run_eval(
-    corpus: EvalCorpus, queries: list[dict], k: int = 5, judge: bool = False
-) -> dict:
+def run_eval(corpus: EvalCorpus, queries: list[dict], k: int = 5, judge: bool = False) -> dict:
     """Run full eval: both retrievers, all metrics, per-query and aggregated.
 
     When *judge* is True, also runs the (non-deterministic, API-backed) LLM judge
@@ -430,22 +418,14 @@ def run_eval(
             "recall_like": recall_at_k(like_pks, q["expected_note_pks"], k),
             "mrr_semantic": mrr(sem_pks, q["expected_note_pks"]),
             "mrr_like": mrr(like_pks, q["expected_note_pks"]),
-            "groundedness_semantic": keyword_groundedness(
-                sem_text, q["expected_keywords"]
-            ),
-            "groundedness_like": keyword_groundedness(
-                like_text, q["expected_keywords"]
-            ),
+            "groundedness_semantic": keyword_groundedness(sem_text, q["expected_keywords"]),
+            "groundedness_like": keyword_groundedness(like_text, q["expected_keywords"]),
         }
         if judge:
             # Judge both retrieval paths on the same footing so the column is
             # comparable to every other RAG-vs-keyword metric.
-            result["llm_judge_semantic"] = llm_judge_text(
-                q["query"], sem_text, q["answer_context"]
-            )
-            result["llm_judge_like"] = llm_judge_text(
-                q["query"], like_text, q["answer_context"]
-            )
+            result["llm_judge_semantic"] = llm_judge_text(q["query"], sem_text, q["answer_context"])
+            result["llm_judge_like"] = llm_judge_text(q["query"], like_text, q["answer_context"])
         query_results.append(result)
 
     # Aggregate metrics
@@ -476,9 +456,7 @@ def _aggregate(query_results: list[dict]) -> dict:
         # Require *every* item to carry them (not just items[0]) so heterogeneous
         # judge data — e.g. a query added while EVAL_LLM_JUDGE was off — degrades
         # gracefully instead of raising KeyError inside _avg.
-        if items and all(
-            "llm_judge_semantic" in i and "llm_judge_like" in i for i in items
-        ):
+        if items and all("llm_judge_semantic" in i and "llm_judge_like" in i for i in items):
             metrics["llm_judge_semantic"] = round(_avg(items, "llm_judge_semantic"), 4)
             metrics["llm_judge_like"] = round(_avg(items, "llm_judge_like"), 4)
         return metrics
@@ -512,13 +490,8 @@ def render_report(results_path: Path) -> str:
     lines.append("## Aggregate Metrics\n")
     lines.append("| Metric | RAG | Keyword (LIKE) |")
     lines.append("|--------|-----|----------------|")
-    lines.append(
-        f"| Recall@5 | {overall['recall_semantic']:.2f} "
-        f"| {overall['recall_like']:.2f} |"
-    )
-    lines.append(
-        f"| MRR | {overall['mrr_semantic']:.2f} | {overall['mrr_like']:.2f} |"
-    )
+    lines.append(f"| Recall@5 | {overall['recall_semantic']:.2f} | {overall['recall_like']:.2f} |")
+    lines.append(f"| MRR | {overall['mrr_semantic']:.2f} | {overall['mrr_like']:.2f} |")
     lines.append(
         f"| Groundedness | {overall['groundedness_semantic']:.2f} "
         f"| {overall['groundedness_like']:.2f} |"
@@ -532,12 +505,8 @@ def render_report(results_path: Path) -> str:
 
     # Per-type breakdown
     lines.append("## By Query Type\n")
-    lines.append(
-        "| Query Type | Count | Recall RAG | Recall LIKE | MRR RAG | MRR LIKE |"
-    )
-    lines.append(
-        "|------------|-------|------------|-------------|---------|----------|"
-    )
+    lines.append("| Query Type | Count | Recall RAG | Recall LIKE | MRR RAG | MRR LIKE |")
+    lines.append("|------------|-------|------------|-------------|---------|----------|")
     for t in sorted(by_type.keys()):
         m = by_type[t]
         lines.append(
@@ -560,9 +529,7 @@ def render_report(results_path: Path) -> str:
         gap = ex["recall_semantic"] - ex["recall_like"]
         lines.append(f"### {ex['id']}: {ex['query']}")
         lines.append(f"*Type: {ex['type']} | Recall gap: {gap:+.2f}*\n")
-        lines.append(
-            f"**RAG returns:** {', '.join(ex['semantic_titles'][:5])}"
-        )
+        lines.append(f"**RAG returns:** {', '.join(ex['semantic_titles'][:5])}")
         lines.append(
             f"**Keyword returns:** "
             f"{', '.join(ex['like_titles'][:5]) if ex['like_titles'] else '[no results]'}"

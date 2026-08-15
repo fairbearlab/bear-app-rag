@@ -14,7 +14,10 @@ def _print_sync_result(result, verb="Updated"):
     if result.notes_updated == 0 and result.notes_deleted == 0:
         print("No notes found.")
         return
-    print(f"{verb} {result.notes_updated} notes ({result.chunks_added} chunks), deleted {result.notes_deleted}.")
+    print(
+        f"{verb} {result.notes_updated} notes ({result.chunks_added} chunks), "
+        f"deleted {result.notes_deleted}."
+    )
 
 
 def _cmd_index(args, store, reader):
@@ -76,7 +79,9 @@ def main():
     subparsers.add_parser("status", help="Show index statistics.")
 
     # demo subcommand
-    subparsers.add_parser("demo", help="Run a self-contained benchmark demo (no Bear database required).")
+    subparsers.add_parser(
+        "demo", help="Run a self-contained benchmark demo (no Bear database required)."
+    )
 
     args = parser.parse_args()
 

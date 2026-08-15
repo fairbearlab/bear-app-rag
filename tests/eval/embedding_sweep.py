@@ -48,7 +48,7 @@ from pathlib import Path
 # tests/eval is a package; allow running as a script too.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from tests.eval.eval_harness import EvalCorpus, run_eval  # noqa: E402
+from tests.eval.eval_harness import EvalCorpus, run_eval
 
 _FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -143,10 +143,10 @@ class FastEmbedFunction:
         self._fastembed_id = fastembed_id
         self._model = TextEmbedding(model_name=fastembed_id, cache_dir=cache_dir)
 
-    def __call__(self, input):  # noqa: A002 — ChromaDB's parameter name is `input`
+    def __call__(self, input):
         return [vec.tolist() for vec in self._model.embed(list(input))]
 
-    def embed_query(self, input):  # noqa: A002 — ChromaDB query path (1.5.x)
+    def embed_query(self, input):
         # Symmetric: queries embed the same way as documents (see class docstring).
         return self(input)
 
@@ -160,7 +160,7 @@ class FastEmbedFunction:
         return {"fastembed_id": self._fastembed_id}
 
     @staticmethod
-    def build_from_config(config: dict) -> "FastEmbedFunction":
+    def build_from_config(config: dict) -> FastEmbedFunction:
         return FastEmbedFunction(config["fastembed_id"])
 
 
@@ -282,7 +282,11 @@ def render_comparison(records: list[dict]) -> str:
     )
     for r in ok:
         tag = " *(current)*" if r.get("baseline") else ""
-        disk = f"{r['disk_mb']:.0f}MB" if r.get("disk_mb") else f"~{r['reported_size_gb']*1000:.0f}MB"
+        disk = (
+            f"{r['disk_mb']:.0f}MB"
+            if r.get("disk_mb")
+            else f"~{r['reported_size_gb'] * 1000:.0f}MB"
+        )
         lines.append(
             f"| `{r['key']}`{tag} | {r['reported_dim']} | {r['license']} "
             f"| {r['recall']:.2f} | {r['mrr']:.2f} | {r['groundedness']:.2f} "

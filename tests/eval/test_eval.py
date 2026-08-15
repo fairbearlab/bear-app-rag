@@ -155,10 +155,9 @@ def _retrieval_matches(prior_q: dict, q: dict) -> bool:
     results.json written before the text hashes existed.
     """
     if "semantic_text_sha" in prior_q and "like_text_sha" in prior_q:
-        return (
-            prior_q["semantic_text_sha"] == q.get("semantic_text_sha")
-            and prior_q["like_text_sha"] == q.get("like_text_sha")
-        )
+        return prior_q["semantic_text_sha"] == q.get("semantic_text_sha") and prior_q[
+            "like_text_sha"
+        ] == q.get("like_text_sha")
     return (
         prior_q.get("semantic_pks") == q["semantic_pks"]
         and prior_q.get("like_pks") == q["like_pks"]
@@ -205,7 +204,8 @@ def _carry_forward_judge(results: dict) -> None:
             warnings.warn(
                 "LLM-judge column dropped: committed results.json judge data is "
                 "incomplete or its retrieval no longer matches this run. "
-                "Re-run with EVAL_LLM_JUDGE=1 to regenerate it."
+                "Re-run with EVAL_LLM_JUDGE=1 to regenerate it.",
+                stacklevel=2,
             )
             return
 
@@ -283,9 +283,7 @@ class TestEvalRetrieval:
         by_type = eval_results["aggregates"]["by_type"]
         em = by_type["exact_match"]
         # LIKE should get at least some recall on exact match queries
-        assert em["recall_like"] > 0.0, (
-            "LIKE recall should be non-zero on exact match queries"
-        )
+        assert em["recall_like"] > 0.0, "LIKE recall should be non-zero on exact match queries"
 
 
 # ------------------------------------------------------------------
@@ -356,8 +354,7 @@ class TestTagFilteredSearch:
 
 @pytest.mark.eval
 @pytest.mark.skipif(
-    not os.environ.get("EVAL_LLM_JUDGE")
-    or not os.environ.get("ANTHROPIC_API_KEY"),
+    not os.environ.get("EVAL_LLM_JUDGE") or not os.environ.get("ANTHROPIC_API_KEY"),
     reason="Set EVAL_LLM_JUDGE=1 and ANTHROPIC_API_KEY to enable LLM judge",
 )
 class TestLLMJudge:
@@ -394,13 +391,12 @@ class TestLLMJudge:
 
 def _mock_anthropic(monkeypatch, *, reply_text=None, error=None):
     """Patch anthropic.Anthropic so llm_judge_text runs without a real API call."""
-    import anthropic
     from unittest.mock import MagicMock
 
+    import anthropic
+
     if error is not None:
-        monkeypatch.setattr(
-            anthropic, "Anthropic", MagicMock(side_effect=error)
-        )
+        monkeypatch.setattr(anthropic, "Anthropic", MagicMock(side_effect=error))
         return
 
     block = MagicMock()
@@ -448,8 +444,9 @@ class TestLLMJudgeFailsClosed:
 
     def test_raises_on_unexpected_response_shape(self, monkeypatch):
         # Empty content list -> IndexError, must surface as LLMJudgeError.
-        import anthropic
         from unittest.mock import MagicMock
+
+        import anthropic
 
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
         response = MagicMock()
@@ -493,9 +490,7 @@ class TestCarryForwardJudge:
 
         assert "llm_judge_semantic" not in results["queries"][0]
 
-    def test_drops_stale_judge_when_text_changed_but_pks_same(
-        self, monkeypatch, tmp_path
-    ):
+    def test_drops_stale_judge_when_text_changed_but_pks_same(self, monkeypatch, tmp_path):
         # Re-chunking / note edit: same PKs, different judged text -> drop.
         import tests.eval.test_eval as te
 
@@ -533,9 +528,7 @@ class TestCarryForwardJudge:
 
         assert "llm_judge_semantic" not in results["queries"][0]
 
-    def test_carries_forward_legacy_results_via_pk_fallback(
-        self, monkeypatch, tmp_path
-    ):
+    def test_carries_forward_legacy_results_via_pk_fallback(self, monkeypatch, tmp_path):
         # Committed results predating text hashes still carry forward on PK match.
         import tests.eval.test_eval as te
 
@@ -589,7 +582,10 @@ class TestCarryForwardJudge:
         path.write_text(json.dumps(prior))
         monkeypatch.setattr(te, "_RESULTS_PATH", path)
 
-        results = {"queries": [{"id": "q1", "semantic_pks": [1], "like_pks": [3]}], "aggregates": {}}
+        results = {
+            "queries": [{"id": "q1", "semantic_pks": [1], "like_pks": [3]}],
+            "aggregates": {},
+        }
         te._carry_forward_judge(results)
 
         assert len(recwarn) == 0  # no judge data committed -> no warning, no-op

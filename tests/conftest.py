@@ -1,13 +1,12 @@
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from bear_rag.store import NoteStore
 
-
-CORE_DATA_EPOCH = datetime(2001, 1, 1, tzinfo=timezone.utc)
+CORE_DATA_EPOCH = datetime(2001, 1, 1, tzinfo=UTC)
 
 
 def datetime_to_core_data(dt: datetime) -> float:
@@ -61,9 +60,9 @@ def bear_db(tmp_path: Path) -> Path:
     )
 
     # Timestamps
-    now = datetime(2024, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
-    older = datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    recent = datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2024, 6, 1, 12, 0, 0, tzinfo=UTC)
+    older = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+    recent = datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC)
 
     notes = [
         # (Z_PK, ZTITLE, ZTEXT, ZMODIFICATIONDATE, ZTRASHED, ZARCHIVED)
@@ -74,7 +73,8 @@ def bear_db(tmp_path: Path) -> Path:
         (5, "No Tags Note", "This note has no tags.", datetime_to_core_data(older), 0, 0),
     ]
     cur.executemany(
-        "INSERT INTO ZSFNOTE (Z_PK, ZTITLE, ZTEXT, ZMODIFICATIONDATE, ZTRASHED, ZARCHIVED) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO ZSFNOTE (Z_PK, ZTITLE, ZTEXT, ZMODIFICATIONDATE, ZTRASHED, ZARCHIVED) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
         notes,
     )
 

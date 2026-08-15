@@ -34,6 +34,13 @@ old decision no longer fits, add or amend an ADR and explain what changed.
 - Add pytest coverage for behavior changes and regressions.
 - Do not add a production dependency without recording why it belongs in the installed
   package.
+- `ruff` (lint + format) and `mypy` are configured in `pyproject.toml` and enforced in CI.
+  Run them locally with `make lint typecheck`, or install the pre-commit hooks once so they
+  run on every commit:
+
+  ```shell
+  make hooks
+  ```
 
 ## Secrets
 
@@ -44,6 +51,8 @@ reference file; `op run` injects the value into the child process only:
 
 ```shell
 op run --env-file=.env.example -- env EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
+# or
+make eval-judge
 ```
 
 Point the `op://` reference at your own vault/item if it differs.
@@ -61,4 +70,5 @@ Point the `op://` reference at your own vault/item if it differs.
 uv run pytest -v              # Default suite; eval-marked tests are excluded
 uv run pytest -m eval -v      # Eval-marked tests only
 uv run pytest -v -m ""        # Entire suite
+make check                    # lint + typecheck + test + eval, as CI runs them
 ```

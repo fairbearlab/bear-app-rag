@@ -26,3 +26,4 @@ htmlcov/
 .bear-rag/
 backlog/
 .gstack/
+requirements-audit.txt

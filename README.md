@@ -193,6 +193,9 @@ reference that `op run` resolves at run time:
 op run --env-file=.env.example -- env EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
 ```
 
+`make check` runs lint, type check, tests, and the eval — the same gates CI enforces. See the
+[Makefile](Makefile) and [CONTRIBUTING.md](CONTRIBUTING.md).
+
 The alternate-model research harness has a separate extra:
 
 ```shell

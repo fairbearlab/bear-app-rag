@@ -1,7 +1,3 @@
-from pathlib import Path
-
-import pytest
-
 from bear_rag.models import Chunk, ChunkMetadata
 from bear_rag.store import NoteStore
 
@@ -129,7 +125,9 @@ class TestNoteStoreReset:
         assert note_store.get_stats()["count"] == 1
 
 
-def _make_tagged_chunk(note_pk: int, chunk_index: int, text: str, tags: str = "", title: str = "Test") -> Chunk:
+def _make_tagged_chunk(
+    note_pk: int, chunk_index: int, text: str, tags: str = "", title: str = "Test"
+) -> Chunk:
     return Chunk(
         id=f"{note_pk}_{chunk_index}",
         text=text,
@@ -154,33 +152,35 @@ class TestNoteStoreQueryWithFilter:
     """
 
     def test_query_filters_by_note_pk_in(self, note_store: NoteStore) -> None:
-        note_store.upsert_chunks([
-            _make_tagged_chunk(1, 0, "Python web framework tutorial"),
-            _make_tagged_chunk(2, 0, "Rust systems programming guide"),
-            _make_tagged_chunk(3, 0, "Go networking library"),
-        ])
-        results = note_store.query(
-            "programming", n_results=10, where={"note_pk": {"$in": [1, 3]}}
+        note_store.upsert_chunks(
+            [
+                _make_tagged_chunk(1, 0, "Python web framework tutorial"),
+                _make_tagged_chunk(2, 0, "Rust systems programming guide"),
+                _make_tagged_chunk(3, 0, "Go networking library"),
+            ]
         )
+        results = note_store.query("programming", n_results=10, where={"note_pk": {"$in": [1, 3]}})
         result_pks = {c.metadata["note_pk"] for c in results}
         assert result_pks == {1, 3}
 
     def test_query_single_pk_in(self, note_store: NoteStore) -> None:
-        note_store.upsert_chunks([
-            _make_tagged_chunk(1, 0, "Python web framework tutorial"),
-            _make_tagged_chunk(2, 0, "Rust systems programming guide"),
-        ])
-        results = note_store.query(
-            "programming", n_results=10, where={"note_pk": {"$in": [2]}}
+        note_store.upsert_chunks(
+            [
+                _make_tagged_chunk(1, 0, "Python web framework tutorial"),
+                _make_tagged_chunk(2, 0, "Rust systems programming guide"),
+            ]
         )
+        results = note_store.query("programming", n_results=10, where={"note_pk": {"$in": [2]}})
         result_pks = {c.metadata["note_pk"] for c in results}
         assert result_pks == {2}
 
     def test_query_without_filter_returns_all(self, note_store: NoteStore) -> None:
-        note_store.upsert_chunks([
-            _make_tagged_chunk(1, 0, "Python web framework tutorial"),
-            _make_tagged_chunk(2, 0, "Rust systems programming guide"),
-        ])
+        note_store.upsert_chunks(
+            [
+                _make_tagged_chunk(1, 0, "Python web framework tutorial"),
+                _make_tagged_chunk(2, 0, "Rust systems programming guide"),
+            ]
+        )
         results = note_store.query("programming", n_results=10)
         assert len(results) == 2
 
@@ -194,9 +194,7 @@ class TestNoteStoreQueryWithFilter:
         ]
         note_store.upsert_chunks(chunks)
         big_pks = list(range(1, 2501))  # 2500 pks in the filter
-        results = note_store.query(
-            "programming", n_results=10, where={"note_pk": {"$in": big_pks}}
-        )
+        results = note_store.query("programming", n_results=10, where={"note_pk": {"$in": big_pks}})
         assert len(results) == 10
         assert all(c.metadata["note_pk"] in set(big_pks) for c in results)
 
@@ -207,18 +205,22 @@ class TestNoteStoreStats:
         assert stats == {"count": 0, "note_count": 0}
 
     def test_stats_after_adding_chunks(self, note_store: NoteStore) -> None:
-        note_store.upsert_chunks([
-            _make_chunk(1, 0, "First chunk"),
-            _make_chunk(1, 1, "Second chunk"),
-        ])
+        note_store.upsert_chunks(
+            [
+                _make_chunk(1, 0, "First chunk"),
+                _make_chunk(1, 1, "Second chunk"),
+            ]
+        )
         stats = note_store.get_stats()
         assert stats == {"count": 2, "note_count": 1}
 
     def test_stats_note_count_distinct(self, note_store: NoteStore) -> None:
-        note_store.upsert_chunks([
-            _make_chunk(1, 0, "Note one chunk one"),
-            _make_chunk(1, 1, "Note one chunk two"),
-            _make_chunk(2, 0, "Note two chunk one"),
-        ])
+        note_store.upsert_chunks(
+            [
+                _make_chunk(1, 0, "Note one chunk one"),
+                _make_chunk(1, 1, "Note one chunk two"),
+                _make_chunk(2, 0, "Note two chunk one"),
+            ]
+        )
         stats = note_store.get_stats()
         assert stats == {"count": 3, "note_count": 2}

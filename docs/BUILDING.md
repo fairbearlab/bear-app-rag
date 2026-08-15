@@ -61,6 +61,7 @@ The gotcha nobody documents: Core Data stores timestamps as seconds since **2001
 ```python
 CORE_DATA_EPOCH = datetime(2001, 1, 1, tzinfo=timezone.utc)
 
+
 def _core_data_to_datetime(ts: float) -> datetime:
     return datetime.fromtimestamp(CORE_DATA_EPOCH.timestamp() + ts, tz=timezone.utc)
 ```
@@ -99,6 +100,7 @@ ChromaDB ships with ONNX Runtime and the all-MiniLM-L6-v2 model. No PyTorch, no 
 ```python
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
+
 class NoteStore:
     def __init__(self, persist_dir):
         self._client = chromadb.PersistentClient(path=str(persist_dir))
@@ -133,6 +135,7 @@ The CLI exists for admin tasks. The real interface is the MCP server: 6 tools th
 
 ```python
 mcp = FastMCP("bear-notes")
+
 
 @server.tool()
 def search_notes(
