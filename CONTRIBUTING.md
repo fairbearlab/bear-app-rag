@@ -64,6 +64,11 @@ Point the `op://` reference at your own vault/item if it differs.
 - The eval corpus needs more retrieval-quality notes and queries before stronger model
   claims are justified.
 
+## Releases
+
+Each release bumps `VERSION` and `pyproject.toml`, moves the `[Unreleased]` CHANGELOG entry
+under a dated heading, and is tagged `vX.Y.Z` on the release commit.
+
 ## Running Tests
 
 ```shell

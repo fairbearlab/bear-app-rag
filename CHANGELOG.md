@@ -2,6 +2,32 @@
 
 All notable changes to bear-rag will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- CI quality gates: `ruff check`, `ruff format --check`, `mypy`, and `pip-audit` run on
+  every push and PR, alongside the existing three-version pytest matrix. The deterministic
+  eval suite (`pytest -m eval`) is now a required CI job instead of a README claim.
+- Committed lint/format/type configuration in `pyproject.toml`; `ruff`, `mypy`, and
+  `pre-commit` join the `dev` extra. `.pre-commit-config.yaml` and a `Makefile`
+  (`make check` = lint + typecheck + test + eval) mirror the CI jobs locally.
+- Dependabot for uv and GitHub Actions; all `uses:` pinned to commit SHAs.
+- `.env.example` with a 1Password `op://` reference so the eval-judge key is injected at
+  run time instead of living in a plaintext `.env`.
+
+### Changed
+
+- Bumped locked dependencies: aiohttp 3.14.3 (PYSEC-2026-3545/3546/3547), pillow 12.3.0,
+  cryptography 50.0.0, and routine transitive updates.
+- Repository now tags each release (`v0.4.1` retroactively marks the existing release).
+- `CLAUDE.md` trimmed to public-relevant agent guidance.
+
+### Security
+
+- Documented chromadb PYSEC-2026-311 (HTTP-server pre-auth RCE, no fixed release yet) in
+  the README: this project uses the in-process client and never runs that server.
+
 ## [0.4.1] - 2026-07-15
 
 ### Changed
