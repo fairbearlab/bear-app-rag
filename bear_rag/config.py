@@ -1,5 +1,4 @@
 import os
-import os  # ACCEPTANCE TEST — deliberate unused import, will be reverted
 from pathlib import Path
 
 # Belt-and-suspenders telemetry disable. NoteStore also passes
