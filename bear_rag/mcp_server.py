@@ -44,6 +44,7 @@ def _handle_errors(func):
 
     return wrapper
 
+
 server = FastMCP("bear-notes")
 
 _reader = None

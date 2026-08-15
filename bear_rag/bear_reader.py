@@ -1,16 +1,15 @@
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bear_rag.models import BearNote
 
-
-CORE_DATA_EPOCH = datetime(2001, 1, 1, tzinfo=timezone.utc)
+CORE_DATA_EPOCH = datetime(2001, 1, 1, tzinfo=UTC)
 
 
 def _core_data_to_datetime(ts: float) -> datetime:
     """Convert a Core Data timestamp (seconds since 2001-01-01 UTC) to a datetime."""
-    return datetime.fromtimestamp(CORE_DATA_EPOCH.timestamp() + ts, tz=timezone.utc)
+    return datetime.fromtimestamp(CORE_DATA_EPOCH.timestamp() + ts, tz=UTC)
 
 
 def _datetime_to_core_data(dt: datetime) -> float:
@@ -24,6 +23,7 @@ class BearReader:
     def __init__(self, db_path: Path | None = None) -> None:
         if db_path is None:
             from bear_rag import config
+
             db_path = config.BEAR_DB_PATH
         db_path = Path(db_path)
         if not db_path.exists():
@@ -62,7 +62,7 @@ class BearReader:
             FROM ZSFNOTE n
             WHERE n.ZTRASHED = 0 {archive_filter}
             ORDER BY n.Z_PK
-        """
+        """  # noqa: S608 — only literal clauses and "?" placeholders are interpolated
         with self._connect() as conn:
             cur = conn.cursor()
             cur.execute(query)
@@ -136,7 +136,7 @@ class BearReader:
             JOIN Z_5TAGS jt ON jt.Z_5NOTES = n.Z_PK
             JOIN ZSFNOTETAG t ON t.Z_PK = jt.Z_13TAGS
             WHERE n.ZTRASHED = 0 AND n.ZARCHIVED = 0 AND t.ZTITLE IN ({placeholders})
-        """
+        """  # noqa: S608 — only literal clauses and "?" placeholders are interpolated
         with self._connect() as conn:
             cur = conn.cursor()
             cur.execute(query, tags)
@@ -209,13 +209,13 @@ class BearReader:
 
         if modified_since is not None:
             dt = datetime.fromisoformat(modified_since)
-            dt = dt.astimezone(timezone.utc) if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+            dt = dt.astimezone(UTC) if dt.tzinfo else dt.replace(tzinfo=UTC)
             conditions.append("n.ZMODIFICATIONDATE > ?")
             params.append(_datetime_to_core_data(dt))
 
         if modified_before is not None:
             dt = datetime.fromisoformat(modified_before)
-            dt = dt.astimezone(timezone.utc) if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+            dt = dt.astimezone(UTC) if dt.tzinfo else dt.replace(tzinfo=UTC)
             conditions.append("n.ZMODIFICATIONDATE < ?")
             params.append(_datetime_to_core_data(dt))
 
@@ -233,7 +233,7 @@ class BearReader:
             WHERE {where_clause}
             ORDER BY n.ZMODIFICATIONDATE DESC
             LIMIT ?
-        """
+        """  # noqa: S608 — only literal clauses and "?" placeholders are interpolated
         params.append(limit)
 
         with self._connect() as conn:
@@ -262,7 +262,7 @@ class BearReader:
                 JOIN Z_5TAGS jt ON jt.Z_13TAGS = t.Z_PK
                 WHERE jt.Z_5NOTES IN ({placeholders})
                 ORDER BY jt.Z_5NOTES, t.ZTITLE
-                """,
+                """,  # noqa: S608 — placeholders only; values are bound
                 chunk,
             )
             for note_pk, tag_title in cur.fetchall():

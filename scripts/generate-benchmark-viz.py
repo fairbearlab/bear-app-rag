@@ -33,20 +33,20 @@ def _bar_chart_svg(
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {total_height}" '
         f'width="{width}" height="{total_height}" role="img" aria-label="{title}">'
     ]
-    lines.append(f'<title>{title}</title>')
-    lines.append('<style>')
-    lines.append('  text { font-family: system-ui, -apple-system, sans-serif; font-size: 13px; }')
-    lines.append('  .title { font-size: 16px; font-weight: 600; }')
-    lines.append('  .label { font-size: 13px; fill: #374151; }')
-    lines.append('  .value { font-size: 12px; fill: #374151; font-weight: 500; }')
-    lines.append('  .bar-rag { fill: #3b82f6; }')
-    lines.append('  .bar-like { fill: #94a3b8; }')
-    lines.append('  @media (prefers-color-scheme: dark) {')
-    lines.append('    .label, .value, .title { fill: #e5e7eb; }')
-    lines.append('    .bar-rag { fill: #60a5fa; }')
-    lines.append('    .bar-like { fill: #64748b; }')
-    lines.append('  }')
-    lines.append('</style>')
+    lines.append(f"<title>{title}</title>")
+    lines.append("<style>")
+    lines.append("  text { font-family: system-ui, -apple-system, sans-serif; font-size: 13px; }")
+    lines.append("  .title { font-size: 16px; font-weight: 600; }")
+    lines.append("  .label { font-size: 13px; fill: #374151; }")
+    lines.append("  .value { font-size: 12px; fill: #374151; font-weight: 500; }")
+    lines.append("  .bar-rag { fill: #3b82f6; }")
+    lines.append("  .bar-like { fill: #94a3b8; }")
+    lines.append("  @media (prefers-color-scheme: dark) {")
+    lines.append("    .label, .value, .title { fill: #e5e7eb; }")
+    lines.append("    .bar-rag { fill: #60a5fa; }")
+    lines.append("    .bar-like { fill: #64748b; }")
+    lines.append("  }")
+    lines.append("</style>")
 
     lines.append(f'<text x="{width // 2}" y="20" text-anchor="middle" class="title">{title}</text>')
 
@@ -55,31 +55,47 @@ def _bar_chart_svg(
         y = y_offset + i * (group_height + group_gap)
         label_y = y + bar_height + gap // 2
 
-        lines.append(f'<text x="{chart_left - 8}" y="{label_y}" text-anchor="end" class="label">{label}</text>')
+        lines.append(
+            f'<text x="{chart_left - 8}" y="{label_y}" text-anchor="end" class="label">'
+            f"{label}</text>"
+        )
 
         rag_w = max(1, rag_values[i] * chart_width)
         like_w = max(1, like_values[i] * chart_width)
 
-        lines.append(f'<rect x="{chart_left}" y="{y}" width="{rag_w:.1f}" height="{bar_height}" '
-                      f'rx="3" class="bar-rag"/>')
-        lines.append(f'<text x="{chart_left + rag_w + 6:.1f}" y="{y + bar_height - 8}" '
-                      f'class="value">{rag_values[i]:.2f}</text>')
+        lines.append(
+            f'<rect x="{chart_left}" y="{y}" width="{rag_w:.1f}" height="{bar_height}" '
+            f'rx="3" class="bar-rag"/>'
+        )
+        lines.append(
+            f'<text x="{chart_left + rag_w + 6:.1f}" y="{y + bar_height - 8}" '
+            f'class="value">{rag_values[i]:.2f}</text>'
+        )
 
         like_y = y + bar_height + gap
-        lines.append(f'<rect x="{chart_left}" y="{like_y}" width="{like_w:.1f}" height="{bar_height}" '
-                      f'rx="3" class="bar-like"/>')
-        lines.append(f'<text x="{chart_left + like_w + 6:.1f}" y="{like_y + bar_height - 8}" '
-                      f'class="value">{like_values[i]:.2f}</text>')
+        lines.append(
+            f'<rect x="{chart_left}" y="{like_y}" width="{like_w:.1f}" height="{bar_height}" '
+            f'rx="3" class="bar-like"/>'
+        )
+        lines.append(
+            f'<text x="{chart_left + like_w + 6:.1f}" y="{like_y + bar_height - 8}" '
+            f'class="value">{like_values[i]:.2f}</text>'
+        )
 
     # Legend
     ly = total_height - 14
-    lines.append(f'<rect x="{chart_left}" y="{ly - 10}" width="14" height="14" rx="2" class="bar-rag"/>')
+    lines.append(
+        f'<rect x="{chart_left}" y="{ly - 10}" width="14" height="14" rx="2" class="bar-rag"/>'
+    )
     lines.append(f'<text x="{chart_left + 20}" y="{ly + 1}" class="label">RAG</text>')
-    lines.append(f'<rect x="{chart_left + 70}" y="{ly - 10}" width="14" height="14" rx="2" class="bar-like"/>')
+    lines.append(
+        f'<rect x="{chart_left + 70}" y="{ly - 10}" width="14" height="14" rx="2" '
+        'class="bar-like"/>'
+    )
     lines.append(f'<text x="{chart_left + 90}" y="{ly + 1}" class="label">Keyword (LIKE)</text>')
 
-    lines.append('</svg>')
-    return '\n'.join(lines)
+    lines.append("</svg>")
+    return "\n".join(lines)
 
 
 def generate() -> str:
@@ -104,7 +120,11 @@ def generate() -> str:
 
     # Chart 3: Overall metrics
     metric_labels = ["Recall@5", "MRR", "Groundedness"]
-    overall_rag = [overall["recall_semantic"], overall["mrr_semantic"], overall["groundedness_semantic"]]
+    overall_rag = [
+        overall["recall_semantic"],
+        overall["mrr_semantic"],
+        overall["groundedness_semantic"],
+    ]
     overall_like = [overall["recall_like"], overall["mrr_like"], overall["groundedness_like"]]
     # LLM-judge groundedness is only present when the eval ran with EVAL_LLM_JUDGE=1.
     if "llm_judge_semantic" in overall:

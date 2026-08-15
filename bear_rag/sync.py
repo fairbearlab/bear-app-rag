@@ -1,11 +1,11 @@
 """Incremental sync and full index for Bear notes into the vector store."""
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bear_rag import config
-from bear_rag.bear_reader import BearReader, CORE_DATA_EPOCH
+from bear_rag.bear_reader import CORE_DATA_EPOCH, BearReader
 from bear_rag.chunker import chunk_note
 from bear_rag.models import SyncResult
 from bear_rag.store import NoteStore
@@ -27,7 +27,7 @@ def _write_state(state_path: Path, timestamp: float) -> None:
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state = {
         "timestamp": timestamp,
-        "synced_at": datetime.now(tz=timezone.utc).isoformat(),
+        "synced_at": datetime.now(tz=UTC).isoformat(),
         "index_version": config.INDEX_VERSION,
     }
     state_path.write_text(json.dumps(state))

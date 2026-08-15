@@ -2,19 +2,19 @@
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
-from bear_rag.bear_reader import BearReader, CORE_DATA_EPOCH
+from bear_rag.bear_reader import CORE_DATA_EPOCH, BearReader
 from bear_rag.store import NoteStore
 from bear_rag.sync import full_index, sync
-
 
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
+
 
 def _datetime_to_core_data(dt: datetime) -> float:
     return (dt - CORE_DATA_EPOCH).total_seconds()
@@ -23,6 +23,7 @@ def _datetime_to_core_data(dt: datetime) -> float:
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def sync_state_path(tmp_path: Path) -> Path:
@@ -70,9 +71,10 @@ def empty_bear_db(tmp_path: Path) -> Path:
         )
     """)
 
-    ts = _datetime_to_core_data(datetime(2024, 1, 1, tzinfo=timezone.utc))
+    ts = _datetime_to_core_data(datetime(2024, 1, 1, tzinfo=UTC))
     cur.execute(
-        "INSERT INTO ZSFNOTE (Z_PK, ZTITLE, ZTEXT, ZMODIFICATIONDATE, ZTRASHED, ZARCHIVED) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO ZSFNOTE (Z_PK, ZTITLE, ZTEXT, ZMODIFICATIONDATE, ZTRASHED, ZARCHIVED) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
         (1, "Trashed Only", "This is trashed.", ts, 1, 0),
     )
 
@@ -84,6 +86,7 @@ def empty_bear_db(tmp_path: Path) -> Path:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_first_sync_indexes_all_notes(mock_reader, note_store_sync, sync_state_path):
     """First sync with no state file should index all 3 non-trashed, non-archived notes."""
@@ -116,9 +119,7 @@ def test_incremental_sync_only_updates_changed(mock_reader, note_store_sync, syn
     assert note_store_sync.get_stats()["count"] == count_after_first
 
 
-def test_sync_removes_archived_note_chunks(
-    mock_reader, note_store_sync, sync_state_path, bear_db
-):
+def test_sync_removes_archived_note_chunks(mock_reader, note_store_sync, sync_state_path, bear_db):
     """Regression (D6/D18): a note archived after indexing must have its chunks
     removed on the next sync.
 
@@ -160,9 +161,7 @@ def test_second_sync_after_archive_is_idempotent(
     assert result.notes_deleted == 0
 
 
-def test_repeated_sync_no_changes_is_idempotent(
-    mock_reader, note_store_sync, sync_state_path
-):
+def test_repeated_sync_no_changes_is_idempotent(mock_reader, note_store_sync, sync_state_path):
     """A plain second sync with no Bear changes reports 0 updated / 0 deleted."""
     sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
     result = sync(store=note_store_sync, reader=mock_reader, state_path=sync_state_path)
@@ -188,6 +187,7 @@ def test_full_index_resets_and_syncs(mock_reader, note_store_sync, sync_state_pa
     """full_index should clear stale data and re-index all current notes."""
     # Pre-populate with a stale chunk that belongs to a non-existent note pk 999
     from bear_rag.models import Chunk, ChunkMetadata
+
     stale_chunk = Chunk(
         id="999_0",
         text="Stale content",
@@ -234,12 +234,14 @@ def test_sync_writes_index_version(mock_reader, note_store_sync, sync_state_path
 
     state = json.loads(sync_state_path.read_text())
     from bear_rag import config
+
     assert state["index_version"] == config.INDEX_VERSION
 
 
 # ---------------------------------------------------------------------------
 # check_index_version
 # ---------------------------------------------------------------------------
+
 
 def test_sync_triggers_full_reindex_on_version_mismatch(
     mock_reader, note_store_sync, sync_state_path
@@ -261,14 +263,15 @@ def test_sync_triggers_full_reindex_on_version_mismatch(
 
     # State file should now have the correct version.
     from bear_rag import config
+
     state2 = json.loads(sync_state_path.read_text())
     assert state2["index_version"] == config.INDEX_VERSION
 
 
 def test_check_index_version_matches(tmp_path):
     """Returns True when stored version matches current."""
-    from bear_rag.sync import check_index_version
     from bear_rag import config
+    from bear_rag.sync import check_index_version
 
     state_path = tmp_path / "state.json"
     state_path.write_text(json.dumps({"timestamp": 0.0, "index_version": config.INDEX_VERSION}))

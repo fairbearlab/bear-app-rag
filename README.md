@@ -68,6 +68,8 @@ The installed package has no cloud SDK. Indexing, sync, and search do not initia
 
 That boundary ends where the MCP handoff begins: an agent receives your note content and may use its own network services. The optional development-only LLM judge also calls Anthropic when explicitly enabled. Those are opt-in boundaries, not properties of the indexing path. [ADR-0002](docs/decisions/0002-local-onnx-embeddings.md) records the full scope.
 
+**Known upstream advisory.** [PYSEC-2026-311 / CVE-2026-45829](https://github.com/chroma-core/chroma/issues/6717) is a pre-authentication code-injection bug in the ChromaDB *HTTP server* (`chromadb>=1.0`, no fixed release at the time of writing). This project uses `chromadb.PersistentClient` in-process and never starts or exposes that server, so the vulnerable endpoint is not reachable. CI's `pip-audit` step ignores this one ID with a link back here; the ignore is removed once a fixed release ships.
+
 [Read the architecture tour.](docs/ARCHITECTURE.md)
 
 ## Benchmark results
@@ -182,11 +184,17 @@ uv run pytest -m eval -v
 uv run bear-rag demo
 ```
 
-The optional LLM judge requires `ANTHROPIC_API_KEY` and an explicit flag:
+The optional LLM judge requires `ANTHROPIC_API_KEY` and an explicit flag. Inject the key
+from a secret manager rather than a plaintext `.env`; [`.env.example`](.env.example) holds
+a [1Password CLI](https://developer.1password.com/docs/cli/secrets-environment-variables/)
+reference that `op run` resolves at run time:
 
 ```shell
-EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
+op run --env-file=.env.example -- env EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
 ```
+
+`make check` runs lint, type check, tests, and the eval — the same gates CI enforces. See the
+[Makefile](Makefile) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The alternate-model research harness has a separate extra:
 

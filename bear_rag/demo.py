@@ -11,7 +11,7 @@ import sqlite3
 import tempfile
 import time
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bear_rag import config  # noqa: F401 — ensures ANONYMIZED_TELEMETRY is set
@@ -160,6 +160,7 @@ DEMO_QUERIES: list[dict] = [
 # Simplified keyword search (duplicated from eval_harness.py by design)
 # ---------------------------------------------------------------------------
 
+# fmt: off
 _STOP_WORDS = {
     "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
     "have", "has", "had", "do", "does", "did", "will", "would", "could",
@@ -174,6 +175,7 @@ _STOP_WORDS = {
     "that", "these", "those", "am", "it", "its", "i", "me", "my", "we",
     "our", "you", "your", "he", "her", "him", "his", "she", "they", "them",
 }
+# fmt: on
 
 
 def _tokenize_query(query: str) -> list[str]:
@@ -229,6 +231,7 @@ def _keyword_titles(db: sqlite3.Connection, pks: list[int]) -> list[str]:
 # Demo runner
 # ---------------------------------------------------------------------------
 
+
 def run_demo() -> None:
     """Run the self-contained RAG vs keyword demo and print results."""
     tmp_dir: str | None = None
@@ -260,9 +263,7 @@ def run_demo() -> None:
                 pk=n["pk"],
                 title=n["title"],
                 text=n["text"],
-                modified_at=datetime.fromisoformat(n["modified_at"]).replace(
-                    tzinfo=timezone.utc
-                ),
+                modified_at=datetime.fromisoformat(n["modified_at"]).replace(tzinfo=UTC),
                 tags=n.get("tags", []),
                 is_trashed=False,
                 is_archived=False,
@@ -274,9 +275,7 @@ def run_demo() -> None:
 
         # -- Build in-memory SQLite for keyword baseline --
         db = sqlite3.connect(":memory:")
-        db.execute(
-            "CREATE TABLE notes (pk INTEGER PRIMARY KEY, title TEXT, text TEXT)"
-        )
+        db.execute("CREATE TABLE notes (pk INTEGER PRIMARY KEY, title TEXT, text TEXT)")
         db.executemany(
             "INSERT INTO notes (pk, title, text) VALUES (?, ?, ?)",
             [(n["pk"], n["title"], n["text"]) for n in DEMO_CORPUS],

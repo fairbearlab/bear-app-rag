@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -58,16 +58,14 @@ class TestBearReaderReadNotes:
         reader = BearReader(bear_db)
         notes = reader.read_notes()
         for note in notes:
-            assert note.modified_at.tzinfo is not None, (
-                "note.modified_at should be timezone-aware"
-            )
+            assert note.modified_at.tzinfo is not None, "note.modified_at should be timezone-aware"
 
 
 class TestBearReaderModifiedSince:
     def test_returns_only_recently_modified(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
         # Cutoff: June 10, 2024 — only the "recent" note (June 15) qualifies
-        cutoff = datetime_to_core_data(datetime(2024, 6, 10, tzinfo=timezone.utc))
+        cutoff = datetime_to_core_data(datetime(2024, 6, 10, tzinfo=UTC))
         notes = reader.read_notes_modified_since(cutoff)
         pks = [n.pk for n in notes]
         assert pks == [2], f"Expected only pk=2 (recent note), got {pks}"
@@ -75,7 +73,7 @@ class TestBearReaderModifiedSince:
     def test_excludes_trashed_notes(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
         # Very old cutoff — would include everything if not filtered
-        cutoff = datetime_to_core_data(datetime(2000, 1, 1, tzinfo=timezone.utc))
+        cutoff = datetime_to_core_data(datetime(2000, 1, 1, tzinfo=UTC))
         notes = reader.read_notes_modified_since(cutoff)
         pks = [n.pk for n in notes]
         assert 3 not in pks, "Trashed note should be excluded from modified_since"
@@ -83,7 +81,7 @@ class TestBearReaderModifiedSince:
     def test_returns_empty_when_nothing_new(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)
         # Future cutoff — nothing should match
-        cutoff = datetime_to_core_data(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        cutoff = datetime_to_core_data(datetime(2030, 1, 1, tzinfo=UTC))
         notes = reader.read_notes_modified_since(cutoff)
         assert notes == []
 
@@ -109,7 +107,7 @@ class TestBearReaderTrashedPks:
     def test_timestamp_filter_excludes_old_trash(self, bear_db: Path) -> None:
         """With a future timestamp, returns no trashed notes."""
         reader = BearReader(bear_db)
-        future = datetime_to_core_data(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        future = datetime_to_core_data(datetime(2030, 1, 1, tzinfo=UTC))
         pks = reader.read_trashed_pks(since_timestamp=future)
         assert pks == []
 
@@ -241,7 +239,9 @@ class TestBearReaderListNotes:
         # 2024-06-15T04:00:00-05:00 == 2024-06-15T09:00:00Z, which is AFTER note 2.
         notes = reader.list_notes(modified_since="2024-06-15T04:00:00-05:00")
         pks = [n.pk for n in notes]
-        assert 2 not in pks, "Offset should convert to 09:00 UTC, excluding note modified at 08:00 UTC"
+        assert 2 not in pks, (
+            "Offset should convert to 09:00 UTC, excluding note modified at 08:00 UTC"
+        )
 
     def test_modified_before_respects_timezone_offset(self, bear_db: Path) -> None:
         reader = BearReader(bear_db)

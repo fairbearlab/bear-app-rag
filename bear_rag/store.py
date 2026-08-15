@@ -1,29 +1,46 @@
 from pathlib import Path
+from typing import cast
+
+import chromadb
+from chromadb.api.types import Embeddable, EmbeddingFunction, Metadata
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 # Import config before chromadb so ANONYMIZED_TELEMETRY is set in the
 # environment before chromadb reads it (e.g. when NoteStore is imported
 # directly, without going through demo.py / cli.py first). See config.py.
 from bear_rag import config
-
-import chromadb  # noqa: E402 — must follow config import (see above)
-from chromadb.utils.embedding_functions import DefaultEmbeddingFunction  # noqa: E402
-
-from bear_rag.models import Chunk, ChunkMetadata  # noqa: E402
+from bear_rag.models import Chunk, ChunkMetadata
 
 _COLLECTION_NAME = "bear_notes"
+
+
+def _metadata_int(value: object) -> int:
+    """Narrow a ChromaDB metadata value to ``int``.
+
+    Chroma types metadata values as a wide union (str | int | float | bool |
+    list | SparseVector | None); the fields we read back were written as ints.
+    """
+    if isinstance(value, bool) or not isinstance(value, int | float | str):
+        raise TypeError(f"expected a numeric metadata value, got {value!r}")
+    return int(value)
 
 
 class NoteStore:
     def __init__(
         self,
         persist_dir: Path = config.CHROMA_DIR,
-        embedding_function=None,
+        embedding_function: EmbeddingFunction[Embeddable] | None = None,
     ) -> None:
         # Default to ChromaDB's local ONNX all-MiniLM-L6-v2 (see ADR-0002). The
         # injection point exists so the eval harness can benchmark alternate
         # local models (see tests/eval/embedding_sweep.py and ADR-0008); the
         # production path always uses the pinned default.
-        self._embedding_function = embedding_function or DefaultEmbeddingFunction()
+        # DefaultEmbeddingFunction is EmbeddingFunction[Documents]; the collection
+        # API wants EmbeddingFunction[Embeddable]. Chroma's own API surface papers
+        # over the same mismatch with `type: ignore`, so a cast here is honest.
+        self._embedding_function: EmbeddingFunction[Embeddable] = embedding_function or cast(
+            EmbeddingFunction[Embeddable], DefaultEmbeddingFunction()
+        )
         persist_dir.mkdir(parents=True, exist_ok=True)
         self._client = chromadb.PersistentClient(
             path=str(persist_dir),
@@ -47,7 +64,9 @@ class NoteStore:
             self._collection.upsert(
                 ids=[c.id for c in batch],
                 documents=[c.text for c in batch],
-                metadatas=[dict(c.metadata) for c in batch],
+                # ChunkMetadata is a TypedDict of str/int values, which is a valid
+                # chroma Metadata mapping; mypy cannot prove that through TypedDict.
+                metadatas=[cast(Metadata, dict(c.metadata)) for c in batch],
             )
 
     def delete_note(self, note_pk: int) -> None:
@@ -67,7 +86,7 @@ class NoteStore:
     # ------------------------------------------------------------------
 
     def query(self, text: str, n_results: int = 5, where: dict | None = None) -> list[Chunk]:
-        """Return up to n_results chunks most relevant to text, optionally filtered by a where clause.
+        """Return up to n_results chunks most relevant to text, optionally filtered by *where*.
 
         *where* is passed straight through to ChromaDB's native metadata filter
         (e.g. ``{"note_pk": {"$in": [...]}}``). The store performs no
@@ -83,15 +102,20 @@ class NoteStore:
             query_texts=[text], n_results=min(n_results, count), where=where
         )
 
+        documents, metadatas = raw["documents"], raw["metadatas"]
+        # Both are always present with the default `include`; None only appears
+        # when a caller opts out of them, which query() never does.
+        assert documents is not None and metadatas is not None
+
         chunks: list[Chunk] = []
         for chunk_id, document, metadata in zip(
-            raw["ids"][0], raw["documents"][0], raw["metadatas"][0]
+            raw["ids"][0], documents[0], metadatas[0], strict=True
         ):
             chunk_metadata = ChunkMetadata(
-                note_pk=int(metadata["note_pk"]),
+                note_pk=_metadata_int(metadata["note_pk"]),
                 title=str(metadata["title"]),
                 tags=str(metadata["tags"]),
-                chunk_index=int(metadata["chunk_index"]),
+                chunk_index=_metadata_int(metadata["chunk_index"]),
                 heading_path=str(metadata["heading_path"]),
                 modified_at=str(metadata["modified_at"]),
                 source=str(metadata["source"]),
@@ -108,7 +132,8 @@ class NoteStore:
         if self._collection.count() == 0:
             return set()
         raw = self._collection.get(include=["metadatas"])
-        return {int(m["note_pk"]) for m in raw["metadatas"]}
+        assert raw["metadatas"] is not None  # requested via `include`
+        return {_metadata_int(m["note_pk"]) for m in raw["metadatas"]}
 
     def get_stats(self) -> dict:
         """Return a dict with basic collection statistics."""

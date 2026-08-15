@@ -8,7 +8,6 @@ import pytest
 
 from bear_rag.demo import DEMO_CORPUS, run_demo
 
-
 # ---------------------------------------------------------------------------
 # 1. Happy path — run_demo completes without error
 # ---------------------------------------------------------------------------
@@ -139,8 +138,7 @@ def test_corpus_has_five_entries_with_required_keys():
     required_keys = {"pk", "title", "text", "tags", "modified_at"}
     for entry in DEMO_CORPUS:
         assert required_keys.issubset(entry.keys()), (
-            f"Entry pk={entry.get('pk')} missing keys: "
-            f"{required_keys - entry.keys()}"
+            f"Entry pk={entry.get('pk')} missing keys: {required_keys - entry.keys()}"
         )
 
 

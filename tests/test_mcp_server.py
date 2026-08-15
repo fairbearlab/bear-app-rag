@@ -5,13 +5,12 @@ Tests call the tool handler functions directly, not via MCP protocol.
 
 import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 
 from bear_rag import config, mcp_server
 from bear_rag.bear_reader import BearReader
-from bear_rag.models import BearNote, Chunk, ChunkMetadata, SyncResult
 from bear_rag.store import NoteStore
 
 
@@ -198,7 +197,9 @@ class TestStatus:
         _index_all_notes(reader, store)
         # Write a fake state file
         state_path = tmp_path / "last_sync.json"
-        state_path.write_text(json.dumps({"synced_at": "2024-06-01T00:00:00Z", "timestamp": 0.0, "index_version": 2}))
+        state_path.write_text(
+            json.dumps({"synced_at": "2024-06-01T00:00:00Z", "timestamp": 0.0, "index_version": 2})
+        )
         with patch.object(config, "SYNC_STATE_PATH", state_path):
             result = mcp_server.status()
         assert result["index_count"] > 0
@@ -232,7 +233,9 @@ class TestHandleErrors:
         leaky_path = "/Users/definitely-not-a-real-user/Library/Group Containers/db.sqlite"
         with patch(
             "bear_rag.mcp_server._get_reader",
-            side_effect=FileNotFoundError(f"Bear database not found at {leaky_path}. Is Bear installed?"),
+            side_effect=FileNotFoundError(
+                f"Bear database not found at {leaky_path}. Is Bear installed?"
+            ),
         ):
             result = mcp_server.read_note("Any Title")
         assert result == {"error": "Bear database not found. Is Bear installed?"}

@@ -1,10 +1,8 @@
 """Tests for bear_rag.chunker — written before implementation (TDD)."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-import pytest
-
-from bear_rag.models import BearNote, Chunk
+from bear_rag.models import BearNote
 
 
 def _make_note(
@@ -18,7 +16,7 @@ def _make_note(
         pk=pk,
         title=title,
         text=text,
-        modified_at=datetime(2024, 6, 1, 12, 0, 0, tzinfo=timezone.utc),
+        modified_at=datetime(2024, 6, 1, 12, 0, 0, tzinfo=UTC),
         tags=tags if tags is not None else [],
         is_trashed=False,
         is_archived=False,
@@ -57,11 +55,7 @@ class TestChunkNoteBasic:
 
         # Use enough words per section so merge-up does not collapse them
         para = " ".join(["word"] * (MIN_CHUNK_WORDS * 2))
-        text = (
-            f"# Section One\n\n{para}\n\n"
-            f"# Section Two\n\n{para}\n\n"
-            f"# Section Three\n\n{para}\n"
-        )
+        text = f"# Section One\n\n{para}\n\n# Section Two\n\n{para}\n\n# Section Three\n\n{para}\n"
         note = _make_note(text)
         chunks = chunk_note(note)
         # Each heading should produce a separate chunk
@@ -70,7 +64,9 @@ class TestChunkNoteBasic:
     def test_heading_path_top_level(self) -> None:
         from bear_rag.chunker import chunk_note
 
-        text = "# Introduction\n\nSome introductory text here with enough words to be a valid chunk."
+        text = (
+            "# Introduction\n\nSome introductory text here with enough words to be a valid chunk."
+        )
         note = _make_note(text)
         chunks = chunk_note(note)
         # Find a chunk with heading path containing "Introduction"
@@ -85,11 +81,7 @@ class TestChunkNoteBasic:
 
         # Use enough words per section to survive merge-up
         para = " ".join(["word"] * (MIN_CHUNK_WORDS * 2))
-        text = (
-            f"# H1\n\n{para}\n\n"
-            f"## H2\n\n{para}\n\n"
-            f"### H3\n\n{para}\n"
-        )
+        text = f"# H1\n\n{para}\n\n## H2\n\n{para}\n\n### H3\n\n{para}\n"
         note = _make_note(text)
         chunks = chunk_note(note)
         paths = [c.metadata["heading_path"] for c in chunks]
@@ -102,11 +94,7 @@ class TestChunkNoteBasic:
 
         # Build text with enough content so chunks survive merge-up
         para = " ".join(["word"] * 40)
-        text = (
-            f"# H1\n\n{para}\n\n"
-            f"## H2\n\n{para}\n\n"
-            f"### H3\n\n{para}\n"
-        )
+        text = f"# H1\n\n{para}\n\n## H2\n\n{para}\n\n### H3\n\n{para}\n"
         note = _make_note(text)
         chunks = chunk_note(note)
         paths = [c.metadata["heading_path"] for c in chunks]
@@ -119,11 +107,7 @@ class TestChunkNoteBasic:
         from bear_rag.chunker import chunk_note
 
         para = " ".join(["word"] * 40)
-        text = (
-            f"# H1\n\n{para}\n\n"
-            f"## H2a\n\n{para}\n\n"
-            f"## H2b\n\n{para}\n"
-        )
+        text = f"# H1\n\n{para}\n\n## H2a\n\n{para}\n\n## H2b\n\n{para}\n"
         note = _make_note(text)
         chunks = chunk_note(note)
         paths = [c.metadata["heading_path"] for c in chunks]
@@ -222,9 +206,7 @@ class TestChunkNoteSecondarySplit:
         text = f"# Section\n\n{para}\n\n{para}\n"
         note = _make_note(text)
         chunks = chunk_note(note)
-        assert len(chunks) >= 2, (
-            "Oversized chunk should be split into at least 2 chunks"
-        )
+        assert len(chunks) >= 2, "Oversized chunk should be split into at least 2 chunks"
 
     def test_oversized_split_respects_max_words(self) -> None:
         from bear_rag.chunker import chunk_note
@@ -258,7 +240,7 @@ class TestChunkNoteSecondarySplit:
         chunk1_words = chunks[1].text.split()
         overlap_words = chunk0_words[-OVERLAP_WORDS:]
         # At least some overlap words should appear at the beginning of chunk1
-        chunk1_start = chunk1_words[:OVERLAP_WORDS * 2]
+        chunk1_start = chunk1_words[: OVERLAP_WORDS * 2]
         overlap_found = any(w in chunk1_start for w in overlap_words)
         assert overlap_found, (
             f"Expected overlap between consecutive chunks.\n"
@@ -308,11 +290,7 @@ class TestChunkNoteMergeUp:
     def test_all_chunks_undersized_produces_single_chunk(self) -> None:
         from bear_rag.chunker import chunk_note
 
-        text = (
-            "# A\n\nTiny.\n\n"
-            "# B\n\nAlso tiny.\n\n"
-            "# C\n\nStill tiny.\n"
-        )
+        text = "# A\n\nTiny.\n\n# B\n\nAlso tiny.\n\n# C\n\nStill tiny.\n"
         note = _make_note(text)
         chunks = chunk_note(note)
         assert len(chunks) == 1, (
@@ -344,9 +322,7 @@ class TestChunkNoteMetadata:
         note = _make_note("Some content with enough words to be a valid chunk.", pk=42)
         chunks = chunk_note(note)
         for i, chunk in enumerate(chunks):
-            assert chunk.id == f"42_{i}", (
-                f"Expected chunk id '42_{i}', got '{chunk.id}'"
-            )
+            assert chunk.id == f"42_{i}", f"Expected chunk id '42_{i}', got '{chunk.id}'"
 
     def test_sequential_chunk_index(self) -> None:
         from bear_rag.chunker import chunk_note
@@ -372,9 +348,7 @@ class TestChunkNoteMetadata:
         assert len(chunks) >= 1
         tags_str = chunks[0].metadata["tags"]
         assert isinstance(tags_str, str), f"tags should be str, got {type(tags_str)}"
-        assert tags_str == ",python,rag,notes,", (
-            f"Expected ',python,rag,notes,', got '{tags_str}'"
-        )
+        assert tags_str == ",python,rag,notes,", f"Expected ',python,rag,notes,', got '{tags_str}'"
 
     def test_tags_empty_list(self) -> None:
         from bear_rag.chunker import chunk_note
@@ -394,7 +368,7 @@ class TestChunkNoteMetadata:
     def test_modified_at_iso_format(self) -> None:
         from bear_rag.chunker import chunk_note
 
-        dt = datetime(2024, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+        dt = datetime(2024, 6, 1, 12, 0, 0, tzinfo=UTC)
         note = _make_note("Content with enough words to be valid chunk.", pk=1)
         note = BearNote(
             pk=1,

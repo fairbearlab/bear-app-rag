@@ -1,19 +1,14 @@
-## Skill routing
+# Working in this repo
 
-When the user's request matches an available skill, ALWAYS invoke it using the Skill
-tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
-The skill has specialized workflows that produce better results than ad-hoc answers.
+Guidance for coding agents. Humans: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Key routing rules:
-- Product ideas, "is this worth building", brainstorming → invoke office-hours
-- Bugs, errors, "why is this broken", 500 errors → invoke investigate
-- Ship, deploy, push, create PR → invoke ship
-- QA, test the site, find bugs → invoke qa
-- Code review, check my diff → invoke review
-- Update docs after shipping → invoke document-release
-- Weekly retro → invoke retro
-- Design system, brand → invoke design-consultation
-- Visual audit, design polish → invoke design-review
-- Architecture review → invoke plan-eng-review
-- Save progress, checkpoint, resume → invoke checkpoint
-- Code quality, health check → invoke health
+- **Verify before you finish.** `make check` runs ruff, mypy, the default pytest suite,
+  and the eval suite — the same gates CI enforces. Keep all four green.
+- **Never write to Bear's database.** `bear_reader.py` opens it read-only; keep it that way.
+- **Keep the local-only boundary.** Indexing, sync, and search must not make network
+  requests after the one-time model download (`tests/test_privacy.py` enforces this).
+  Do not add a production dependency without an ADR-level reason; there are two.
+- **Check the ADRs first.** [docs/decisions/](docs/decisions/) records the settled
+  boundaries. Amend an ADR rather than quietly working around one.
+- **Secrets never touch the tree.** The only credential is `ANTHROPIC_API_KEY` for the
+  opt-in eval judge; inject it via `op run` (see `.env.example`), never a plaintext `.env`.

@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -14,9 +17,9 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: true
 
@@ -28,3 +31,52 @@ jobs:
 
       - name: Run tests
         run: uv run pytest -v
+
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Type check
+        run: uv run mypy
+
+      - name: Audit locked dependencies
+        # Audit exactly what uv.lock resolves to (all extras), without re-resolving.
+        # PYSEC-2026-311 (chromadb HTTP server pre-auth RCE) has no fixed release; this
+        # project uses the in-process PersistentClient and never runs that server.
+        # See the "Known upstream advisory" note in README.md. Drop the ignore once a
+        # fixed chromadb ships: https://github.com/chroma-core/chroma/issues/6717
+        run: |
+          uv export --all-extras --no-emit-project --no-hashes -o requirements-audit.txt
+          uvx pip-audit --strict --no-deps --disable-pip -r requirements-audit.txt \
+            --ignore-vuln PYSEC-2026-311
+
+  eval:
+    # The flagship benchmark. Deterministic with committed fixtures, so enforce it in
+    # CI rather than leaving it behind pyproject's `-m 'not eval'` default.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run eval suite
+        run: uv run pytest -m eval -v
