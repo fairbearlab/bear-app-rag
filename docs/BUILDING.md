@@ -205,10 +205,11 @@ Run the eval yourself:
 uv run pytest -m eval -v
 ```
 
-With the optional LLM judge (requires `ANTHROPIC_API_KEY`):
+With the optional LLM judge (requires `ANTHROPIC_API_KEY`, resolved from 1Password via the
+committed `.env.example` reference file):
 
 ```shell
-EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
+op run --env-file=.env.example -- env EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
 ```
 
 Or run the self-contained demo (no Bear database required):

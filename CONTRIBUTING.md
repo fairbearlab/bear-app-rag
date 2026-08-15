@@ -35,6 +35,19 @@ old decision no longer fits, add or amend an ADR and explain what changed.
 - Do not add a production dependency without recording why it belongs in the installed
   package.
 
+## Secrets
+
+The only credential this project ever needs is `ANTHROPIC_API_KEY`, and only for the
+opt-in LLM-judge eval. Do not keep it in a plaintext `.env`. `.env.example` is a committed
+[1Password CLI](https://developer.1password.com/docs/cli/secrets-environment-variables/)
+reference file; `op run` injects the value into the child process only:
+
+```shell
+op run --env-file=.env.example -- env EVAL_LLM_JUDGE=1 uv run pytest -m eval -v
+```
+
+Point the `op://` reference at your own vault/item if it differs.
+
 ## What to Work On
 
 - Issues labeled "good first issue"
