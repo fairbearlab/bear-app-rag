@@ -56,11 +56,11 @@ source = ["bear_rag"]
 branch = true
 
 [tool.coverage.report]
-# Floor set from the measured 96% branch coverage at the time this gate landed
+# Floor set from the measured 95.73% branch coverage at the time this gate landed
 # (session 4), minus a point of headroom. It exists to catch regression, not to be
 # a stretch goal — raise it when coverage rises. Note this measures the default
 # suite; the eval suite runs separately and is not part of the number.
-fail_under = 99
+fail_under = 94
 show_missing = true
 
 [tool.ruff]
