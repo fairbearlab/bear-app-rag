@@ -31,6 +31,7 @@ Documentation = "https://fairbearlab.github.io/bear-app-rag/"
 dev = [
     "anthropic>=0.49,<1.0",
     "pytest>=9.0,<10.0",
+    "pytest-cov>=7.0",
     "pytest-socket>=0.8.0",
     "ruff>=0.14",
     "mypy>=1.19",
@@ -49,6 +50,18 @@ bear-rag-mcp = "bear_rag.mcp_server:main"
 [tool.pytest.ini_options]
 markers = ["eval: marks tests as evaluation suite (deselect with -m 'not eval')"]
 addopts = "-m 'not eval'"
+
+[tool.coverage.run]
+source = ["bear_rag"]
+branch = true
+
+[tool.coverage.report]
+# Floor set from the measured 95.73% branch coverage at the time this gate landed
+# (session 4), minus a point of headroom. It exists to catch regression, not to be
+# a stretch goal — raise it when coverage rises. Note this measures the default
+# suite; the eval suite runs separately and is not part of the number.
+fail_under = 94
+show_missing = true
 
 [tool.ruff]
 target-version = "py311"

@@ -1,5 +1,11 @@
 # bear-app-rag
 
+[![CI](https://github.com/fairbearlab/bear-app-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/fairbearlab/bear-app-rag/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/fairbearlab/bear-app-rag/badge)](https://scorecard.dev/viewer/?uri=github.com/fairbearlab/bear-app-rag)
+[![codecov](https://codecov.io/gh/fairbearlab/bear-app-rag/graph/badge.svg)](https://codecov.io/gh/fairbearlab/bear-app-rag)
+[![Tag](https://img.shields.io/github/v/tag/fairbearlab/bear-app-rag?sort=semver&label=tag)](https://github.com/fairbearlab/bear-app-rag/tags)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Local-first semantic search for [Bear](https://bear.app) notes. It reads Bear's SQLite database without modifying it, builds a local ONNX vector index, and lets agents retrieve through MCP.
 
 Minimal by design. Two production dependencies. No orchestration framework. An eval shows where semantic search beats keyword matching and where it does not.
