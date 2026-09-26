@@ -64,14 +64,33 @@ jobs:
 
       - name: Audit locked dependencies
         # Audit exactly what uv.lock resolves to (all extras), without re-resolving.
-        # PYSEC-2026-311 (chromadb HTTP server pre-auth RCE) has no fixed release; this
-        # project uses the in-process PersistentClient and never runs that server.
-        # See the "Known upstream advisory" note in README.md. Drop the ignore once a
-        # fixed chromadb ships: https://github.com/chroma-core/chroma/issues/6717
+        # All four ignores below are chromadb *HTTP server* vulnerabilities with no
+        # fixed release; this project only uses chromadb.PersistentClient in-process
+        # (bear_rag/store.py) and never starts or exposes that server, so none of the
+        # vulnerable REST endpoints are reachable. See the "Known upstream advisory"
+        # note in README.md and PR chore/pip-audit-chromadb-triage for the risk-
+        # acceptance writeup. Drop each ignore once a fixed chromadb ships:
+        # https://github.com/chroma-core/chroma/issues/6717
         run: |
           uv export --all-extras --no-emit-project --no-hashes -o requirements-audit.txt
           uvx pip-audit --strict --no-deps --disable-pip -r requirements-audit.txt \
-            --ignore-vuln PYSEC-2026-311
+            `# GHSA-f4j7-r4q5-qw2c: pre-auth RCE in the chromadb HTTP server via` \
+            `# trust_remote_code; we never start that server. No fixed release yet.` \
+            --ignore-vuln PYSEC-2026-311 \
+            `# GHSA-2wm9-hf6c-p5cr: server RBAC lets an authenticated user cross` \
+            `# tenant/collection boundaries; we run no server and no authenticated-user` \
+            `# surface. No fixed release yet.` \
+            --ignore-vuln PYSEC-2026-3813 \
+            `# GHSA-36p7-vc44-83pf: code injection via trust_remote_code on the` \
+            `# server's PUT .../collections/{id} REST endpoint; PersistentClient has no` \
+            `# HTTP surface to send that request to. No fixed release yet.` \
+            --ignore-vuln PYSEC-2026-3814 \
+            `# GHSA-xph7-9rjv-w5fr: SimpleRBACAuthorizationProvider ignores` \
+            `# tenant/db/collection scope; we don't run chromadb's auth/authz layer at` \
+            `# all (embedded, single-process, no server). No fixed release yet.` \
+            --ignore-vuln PYSEC-2026-3815
+          # Revisit all four ignores when chromadb > 1.5.9 ships:
+          # https://github.com/chroma-core/chroma/issues/6717
 
   eval:
     # The flagship benchmark. Deterministic with committed fixtures, so enforce it in
