@@ -30,7 +30,10 @@ eval-judge: ## Eval with the LLM judge; key injected from 1Password via .env.exa
 audit: ## pip-audit against the locked dependency set (same invocation as CI)
 	uv export --all-extras --no-emit-project --no-hashes -o requirements-audit.txt
 	uvx pip-audit --strict --no-deps --disable-pip -r requirements-audit.txt \
-		--ignore-vuln PYSEC-2026-311
+		--ignore-vuln PYSEC-2026-311 \
+		--ignore-vuln PYSEC-2026-3813 \
+		--ignore-vuln PYSEC-2026-3814 \
+		--ignore-vuln PYSEC-2026-3815
 	rm -f requirements-audit.txt
 
 check: lint typecheck test eval ## Everything CI runs, minus the audit

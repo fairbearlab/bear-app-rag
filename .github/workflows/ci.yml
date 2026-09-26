@@ -67,9 +67,10 @@ jobs:
         # All four ignores below are chromadb *HTTP server* vulnerabilities with no
         # fixed release; this project only uses chromadb.PersistentClient in-process
         # (bear_rag/store.py) and never starts or exposes that server, so none of the
-        # vulnerable REST endpoints are reachable. See the "Known upstream advisory"
-        # note in README.md and PR chore/pip-audit-chromadb-triage for the risk-
-        # acceptance writeup. Drop each ignore once a fixed chromadb ships:
+        # vulnerable REST endpoints are reachable. See the "Known upstream advisories"
+        # notes in README.md and SECURITY.md, and PR #24 for the risk-acceptance
+        # writeup. Keep the Makefile `audit` target's ignore list in sync with this
+        # one. Drop each ignore once a fixed chromadb ships:
         # https://github.com/chroma-core/chroma/issues/6717
         run: |
           uv export --all-extras --no-emit-project --no-hashes -o requirements-audit.txt
