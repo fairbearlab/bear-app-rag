@@ -374,7 +374,7 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.49,<2.0" },
     { name = "chromadb", specifier = ">=1.0,<2.0" },
     { name = "fastembed", marker = "extra == 'research'", specifier = ">=0.4,<1.0" },
-    { name = "mcp", specifier = ">=1.0,<3.0" },
+    { name = "mcp", specifier = ">=2.0,<3.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.19" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0,<10.0" },
