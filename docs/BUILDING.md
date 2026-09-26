@@ -134,7 +134,7 @@ The CLI exists for admin tasks. The real interface is the MCP server: 6 tools th
 `search_notes` is the one worth showing in full, because its description doubles as UX copy for the agent:
 
 ```python
-mcp = FastMCP("bear-notes")
+server = MCPServer("bear-notes")
 
 
 @server.tool()
