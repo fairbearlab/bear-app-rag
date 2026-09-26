@@ -286,3 +286,32 @@ class TestIntegration:
         assert "error" not in note
         assert note["title"] == title
         assert len(note["text"]) > 0
+
+
+class TestToolRegistration:
+    """Tools register with the MCP SDK server, not just as plain functions.
+
+    The tests above call handlers directly, so they would still pass if an SDK
+    upgrade (e.g. mcp 1.x FastMCP -> 2.x MCPServer) stopped registering tools.
+    """
+
+    def test_all_tools_registered(self) -> None:
+        import asyncio
+
+        tools = asyncio.run(mcp_server.server.list_tools())
+        assert {t.name for t in tools} == {
+            "search_notes",
+            "read_note",
+            "list_notes",
+            "list_tags",
+            "sync_notes",
+            "status",
+        }
+
+    def test_search_notes_schema_and_description(self) -> None:
+        import asyncio
+
+        tools = {t.name: t for t in asyncio.run(mcp_server.server.list_tools())}
+        search = tools["search_notes"]
+        assert search.description
+        assert {"query", "limit", "tags"} <= set(search.input_schema["properties"])
