@@ -27,6 +27,10 @@ All notable changes to bear-rag will be documented in this file.
 
 - Documented chromadb PYSEC-2026-311 (HTTP-server pre-auth RCE, no fixed release yet) in
   the README: this project uses the in-process client and never runs that server.
+- Risk-accepted three further chromadb 1.5.9 advisories with the same HTTP-server-only
+  shape (PYSEC-2026-3813 / CVE-2026-45830, PYSEC-2026-3814 / CVE-2026-45833,
+  PYSEC-2026-3815 / CVE-2026-45831): CI's `pip-audit` step and `make audit` ignore all
+  four IDs, with the reachability rationale recorded in README.md and SECURITY.md.
 
 ## [0.4.1] - 2026-07-15
 
