@@ -18,6 +18,10 @@ All notable changes to bear-rag will be documented in this file.
 
 ### Changed
 
+- MCP server migrated to the `mcp` 2.x SDK: `FastMCP` is now `MCPServer`
+  (`mcp.server.mcpserver`). The runtime requirement is now `mcp>=2.0,<3.0`; the six
+  tools and their behavior are unchanged. Dev extra: `anthropic` 1.0.0, `pytest-socket`
+  0.8.1, `ruff` 0.16.4.
 - Bumped locked dependencies: aiohttp 3.14.3 (PYSEC-2026-3545/3546/3547), pillow 12.3.0,
   cryptography 50.0.0, and routine transitive updates.
 - Repository now tags each release (`v0.4.1` retroactively marks the existing release).

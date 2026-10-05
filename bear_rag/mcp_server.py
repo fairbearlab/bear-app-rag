@@ -7,7 +7,7 @@ Read-only: Bear SQLite accessed via ?mode=ro URI.
 import functools
 import logging
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from bear_rag.bear_reader import BearReader
 from bear_rag.status import get_status
@@ -45,7 +45,7 @@ def _handle_errors(func):
     return wrapper
 
 
-server = FastMCP("bear-notes")
+server = MCPServer("bear-notes")
 
 _reader = None
 _store = None
