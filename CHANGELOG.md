@@ -31,6 +31,9 @@ All notable changes to bear-rag will be documented in this file.
   shape (PYSEC-2026-3813 / CVE-2026-45830, PYSEC-2026-3814 / CVE-2026-45833,
   PYSEC-2026-3815 / CVE-2026-45831): CI's `pip-audit` step and `make audit` ignore all
   four IDs, with the reachability rationale recorded in README.md and SECURITY.md.
+- Upgraded transitive dependencies in `uv.lock` to clear new `pip-audit` findings:
+  pyjwt 2.13.0 → 2.15.1, urllib3 2.7.0 → 2.8.0, virtualenv 21.7.4 → 21.14.5, and
+  oauthlib 3.3.1 → 4.0.0 (only reachable via chromadb's kubernetes client).
 
 ## [0.4.1] - 2026-07-15
 
