@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
 
@@ -33,7 +33,7 @@ jobs:
         # coverage.py enforces the fail_under floor from pyproject.toml.
         run: uv run pytest -v --cov --cov-report=term-missing --cov-report=xml
 
-      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         if: matrix.python-version == '3.13'
         with:
           files: coverage.xml
@@ -46,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
 
@@ -64,14 +64,34 @@ jobs:
 
       - name: Audit locked dependencies
         # Audit exactly what uv.lock resolves to (all extras), without re-resolving.
-        # PYSEC-2026-311 (chromadb HTTP server pre-auth RCE) has no fixed release; this
-        # project uses the in-process PersistentClient and never runs that server.
-        # See the "Known upstream advisory" note in README.md. Drop the ignore once a
-        # fixed chromadb ships: https://github.com/chroma-core/chroma/issues/6717
+        # All four ignores below are chromadb *HTTP server* vulnerabilities with no
+        # fixed release; this project only uses chromadb.PersistentClient in-process
+        # (bear_rag/store.py) and never starts or exposes that server, so none of the
+        # vulnerable REST endpoints are reachable. See the "Known upstream advisories"
+        # notes in README.md and SECURITY.md, and PR #24 for the risk-acceptance
+        # writeup. Keep the Makefile `audit` target's ignore list in sync with this
+        # one. Drop each ignore once a fixed chromadb ships:
+        # https://github.com/chroma-core/chroma/issues/6717
         run: |
           uv export --all-extras --no-emit-project --no-hashes -o requirements-audit.txt
           uvx pip-audit --strict --no-deps --disable-pip -r requirements-audit.txt \
-            --ignore-vuln PYSEC-2026-311
+            `# GHSA-f4j7-r4q5-qw2c: pre-auth RCE in the chromadb HTTP server via` \
+            `# trust_remote_code; we never start that server. No fixed release yet.` \
+            --ignore-vuln PYSEC-2026-311 \
+            `# GHSA-2wm9-hf6c-p5cr: server RBAC lets an authenticated user cross` \
+            `# tenant/collection boundaries; we run no server and no authenticated-user` \
+            `# surface. No fixed release yet.` \
+            --ignore-vuln PYSEC-2026-3813 \
+            `# GHSA-36p7-vc44-83pf: code injection via trust_remote_code on the` \
+            `# server's PUT .../collections/{id} REST endpoint; PersistentClient has no` \
+            `# HTTP surface to send that request to. No fixed release yet.` \
+            --ignore-vuln PYSEC-2026-3814 \
+            `# GHSA-xph7-9rjv-w5fr: SimpleRBACAuthorizationProvider ignores` \
+            `# tenant/db/collection scope; we don't run chromadb's auth/authz layer at` \
+            `# all (embedded, single-process, no server). No fixed release yet.` \
+            --ignore-vuln PYSEC-2026-3815
+          # Revisit all four ignores when chromadb > 1.5.9 ships:
+          # https://github.com/chroma-core/chroma/issues/6717
 
   eval:
     # The flagship benchmark. Deterministic with committed fixtures, so enforce it in
@@ -80,7 +100,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
 
